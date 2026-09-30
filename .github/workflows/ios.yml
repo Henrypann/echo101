@@ -44,6 +44,12 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/echo-simulator" \
             -resultBundlePath "$RUNNER_TEMP/EchoUITests.xcresult" \
             CODE_SIGNING_ALLOWED=NO test
+      - name: Summarize native UI test results
+        if: always()
+        run: |
+          if [ -d "$RUNNER_TEMP/EchoUITests.xcresult" ]; then
+            xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/EchoUITests.xcresult"
+          fi
       - name: Preserve native UI test evidence
         if: always()
         uses: actions/upload-artifact@v4

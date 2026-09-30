@@ -41,7 +41,10 @@ final class Echo101UITests: XCTestCase {
         XCTAssertTrue(english.waitForExistence(timeout: 5))
         english.tap(); english.typeText("A red car.")
         app.buttons["saveExpression"].tap()
-        app.staticTexts["A red car."].firstMatch.tap()
+        let savedExpression = app.staticTexts["A red car."].firstMatch
+        XCTAssertTrue(savedExpression.waitForExistence(timeout: 10))
+        reveal(savedExpression, in: app)
+        savedExpression.tap()
         XCTAssertTrue(app.buttons["playExpression"].waitForExistence(timeout: 5))
         screenshot("Expression", app)
         // Deliberately do not start microphones or change network/system settings.
@@ -51,8 +54,23 @@ final class Echo101UITests: XCTestCase {
         app.staticTexts["A red car."].firstMatch.tap()
         reveal(app.buttons["Delete Expression"], in: app)
         app.buttons["Delete Expression"].tap()
-        app.alerts.buttons["Delete"].tap()
-        XCTAssertFalse(app.staticTexts["expressionTitle"].exists)
+        let confirmDelete = app.alerts.buttons["Delete"]
+        XCTAssertTrue(confirmDelete.waitForExistence(timeout: 5))
+        confirmDelete.tap()
+        // A successful tap is not proof that SwiftUI has finished dismissing.
+        let removed = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: app.staticTexts["expressionTitle"]
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [removed], timeout: 10), .completed)
+        XCTAssertTrue(app.buttons["addMoment"].waitForExistence(timeout: 10))
+        screenshot("Expression-deleted", app)
+        // Verify durable deletion, not just a transient navigation change.
+        app.terminate(); app.launch()
+        XCTAssertTrue(app.buttons["addMoment"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["A red car."].firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["A red toy car at home"].firstMatch.exists)
+        screenshot("Deletion-persists-after-relaunch", app)
         app.terminate()
     }
     func testSettingsDiagnosticsAndCloudOffByDefault() throws {
