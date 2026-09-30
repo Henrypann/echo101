@@ -68,8 +68,8 @@ final class Echo101UITests: XCTestCase {
         // Verify durable deletion, not just a transient navigation change.
         app.terminate(); app.launch()
         XCTAssertTrue(app.buttons["addMoment"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["A red toy car at home"].firstMatch.waitForExistence(timeout: 10))
         XCTAssertFalse(app.staticTexts["A red car."].firstMatch.exists)
-        XCTAssertTrue(app.staticTexts["A red toy car at home"].firstMatch.exists)
         screenshot("Deletion-persists-after-relaunch", app)
         app.terminate()
     }
