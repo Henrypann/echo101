@@ -1,0 +1,163 @@
+{
+  "chineseOnDeviceRecognitionSupported" : true,
+  "cloudEnabled" : false,
+  "englishOnDeviceRecognitionSupported" : true,
+  "localStoreOpened" : true,
+  "microphoneStarted" : false,
+  "rootExcludedFromBackup" : true,
+  "rootProtection" : "NSFileProtectionComplete",
+  "selectedVoiceID" : "com.apple.voice.compact.en-US.Samantha",
+  "systemVersion" : "Version 18.7.4 (Build 22H218)",
+  "voices" : [
+    {
+      "id" : "com.apple.ttsbundle.siri_aaron_en-US_compact",
+      "name" : "Aaron",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Albert",
+      "name" : "Albert",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.BadNews",
+      "name" : "Bad News",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Bahh",
+      "name" : "Bahh",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Bells",
+      "name" : "Bells",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Boing",
+      "name" : "Boing",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Bubbles",
+      "name" : "Bubbles",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Cellos",
+      "name" : "Cellos",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.eloquence.en-US.Eddy",
+      "name" : "Eddy",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.eloquence.en-US.Flo",
+      "name" : "Flo",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Fred",
+      "name" : "Fred",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.GoodNews",
+      "name" : "Good News",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.eloquence.en-US.Grandma",
+      "name" : "Grandma",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.eloquence.en-US.Grandpa",
+      "name" : "Grandpa",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Hysterical",
+      "name" : "Jester",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Junior",
+      "name" : "Junior",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Kathy",
+      "name" : "Kathy",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.ttsbundle.siri_nicky_en-US_compact",
+      "name" : "Nicky",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Organ",
+      "name" : "Organ",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Ralph",
+      "name" : "Ralph",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.eloquence.en-US.Reed",
+      "name" : "Reed",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.eloquence.en-US.Rocko",
+      "name" : "Rocko",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.voice.compact.en-US.Samantha",
+      "name" : "Samantha",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.eloquence.en-US.Sandy",
+      "name" : "Sandy",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.eloquence.en-US.Shelley",
+      "name" : "Shelley",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Princess",
+      "name" : "Superstar",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Trinoids",
+      "name" : "Trinoids",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Whisper",
+      "name" : "Whisper",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Deranged",
+      "name" : "Wobble",
+      "quality" : "Default"
+    },
+    {
+      "id" : "com.apple.speech.synthesis.voice.Zarvox",
+      "name" : "Zarvox",
+      "quality" : "Default"
+    }
+  ]
+}
