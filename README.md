@@ -4,6 +4,8 @@
 
 **v0.2.0 · build 2 · iOS 17+**。界面使用英文，生活片段、释义和家长提示支持中文。家庭数据保存在手机；无需账号、服务器或 Mac 常驻。
 
+本版已实现离线词句本、系统英语示范、跟说录音、短时场景采集、可选模型候选，以及手动导出恢复；已覆盖安装到 iPhone XS。代码与页面可供家庭试用，真实声线、录音中断和模型服务的设备验收状态见 [验收清单](docs/ACCEPTANCE.md)。
+
 ## 两种模式
 
 | 模式 | 页面 | 使用方式 |
@@ -18,6 +20,15 @@ App 非活跃时遮罩私人内容，切到后台后锁回儿童区；真实认�
 <img src="docs/screenshots/today-light.png" width="260" alt="Echo Today 原生浅色页面">
 
 页面预览：[Explore](docs/screenshots/explore-light.png) · [Listen & Say](docs/screenshots/listen-light.png) · [My World](docs/screenshots/world-light.png) · [Overview](docs/screenshots/overview-light.png) · [Add a Moment](docs/screenshots/moment-light.png) · [Review](docs/screenshots/review-light.png) · [Settings](docs/screenshots/settings-light.png) · [深色](docs/screenshots/today-dark.png) · [大字](docs/screenshots/overview-large.png)。这些是原生页面渲染截图，不等于点击、音频、认证或模型服务验收。
+
+## 第一次打开
+
+1. 确保 iPhone 已设置设备密码；通过儿童区的家长入口完成系统认证，进入 Settings。
+2. 先不启用云端，选择并试听手机已有的英语声线。需要更多声线时，在系统设置中下载后返回刷新。
+3. 可添加内置的 20 个示例，试听 `I can say my ABC.`；`ABC` 需要逐个字母朗读时，把朗读文本改为 `I can say my A, B, C.`。
+4. 返回儿童区，试用 Listen / Slow / Parts；再按下面的流程记下自己的第一个生活片段。Parts 仅在表达填写了语块时可用。
+
+先确认本地体验符合家庭需要，再决定是否填写模型 Key。无需连接 Mac，也无需开通模型服务才能开始。
 
 ## 从一个生活片段开始
 
@@ -99,4 +110,15 @@ xcodebuild -project Echo101.xcodeproj -scheme Echo101 \
 
 UI 测试需连接设备并具备测试运行器签名名额；免费签名的设备名额不足时，主 App 安装成功不意味着 UI 测试可运行。签名到期后重新签名覆盖安装。
 
-当前 **Core 23 + API 26，共 49 项通过；CI 模拟器 UI 4 项通过，均为 0 失败**。UI 结果来自 iPhone 16 Pro / iOS 18.5 模拟器，测试记录见 [通过的 CI](https://github.com/Henrypann/echo101/actions/runs/36685233286) 和 [结果摘要](docs/ci-ui-results.json)。签名设备 `build-for-testing` 和无签名 Release 编译通过，主 App 已覆盖安装到 XS。XS 的测试运行器仍受签名名额限制，不能把模拟器结果当作 XS 实测。系统认证、离线 20 句听感、录音中断、真实模型请求和家庭恢复仍需实测，见 [验收清单](docs/ACCEPTANCE.md)。
+### 已验证结果
+
+截至 2026-09-30，提交 `5b31169` 的 [CI 检查全部通过](https://github.com/Henrypann/echo101/actions/runs/36688870644)：**Core 23 + API 26，共 49 项单元测试；UI 4 项，0 失败、0 跳过**。UI 测试在 iPhone 16 Pro / iOS 18.5 模拟器上实际执行，覆盖：
+
+- 新增生活片段与表达，重启读回，删除表达并再次重启验证删除已持久化。
+- 设备能力诊断入口及云端默认关闭。
+- 不启动麦克风即可取消场景采集。
+- 儿童区只显示已确认表达，不暴露草稿与家长提示。
+
+CI 会在日志中输出测试数量和失败摘要，并保留 XCTest 结果包。仓库内的 [较早基线结果摘要](docs/ci-ui-results.json) 对应其中注明的历史运行。
+
+本地签名设备 `build-for-testing` 和无签名 Release 编译通过，主 App 已覆盖安装到 XS；24 组对比度、22 组自适应颜色、12 组插画和 3 种图标检查通过。XS 的测试运行器仍受签名名额限制，不能把模拟器结果当作 XS 实测。系统认证、离线 20 句听感、录音中断、真实模型请求和家庭恢复仍需按 [验收清单](docs/ACCEPTANCE.md) 实测。
