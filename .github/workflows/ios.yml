@@ -1,0 +1,60 @@
+name: Echo checks
+
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: echo-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Core and mocked API tests
+        run: swift test --disable-sandbox --scratch-path "$RUNNER_TEMP/echo-tests"
+      - name: Design tokens and assets
+        run: node scripts/verify-design.mjs
+      - name: Build iOS app and UI tests without signing
+        run: >-
+          xcodebuild -quiet -project Echo101.xcodeproj -scheme Echo101
+          -destination 'generic/platform=iOS'
+          -derivedDataPath "$RUNNER_TEMP/echo-ios"
+          CODE_SIGNING_ALLOWED=NO build-for-testing
+      - name: Run isolated UI flows on an available CI simulator
+        run: |
+          ECHO_SIMULATOR=$(xcrun simctl list devices available -j | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const d=Object.values(JSON.parse(s).devices).flat().find(d=>d.name.startsWith("iPhone"));if(!d)process.exit(1);process.stdout.write(d.udid)})')
+          xcodebuild -quiet -project Echo101.xcodeproj -scheme Echo101 \
+            -destination "platform=iOS Simulator,id=$ECHO_SIMULATOR,arch=$(uname -m)" \
+            -parallel-testing-enabled NO \
+            -derivedDataPath "$RUNNER_TEMP/echo-simulator" \
+            -resultBundlePath "$RUNNER_TEMP/EchoUITests.xcresult" \
+            CODE_SIGNING_ALLOWED=NO test
+      - name: Summarize native UI test results
+        if: always()
+        run: |
+          if [ -d "$RUNNER_TEMP/EchoUITests.xcresult" ]; then
+            xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/EchoUITests.xcresult"
+          fi
+      - name: Preserve native UI test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Echo-UI-test-results
+          path: ${{ runner.temp }}/EchoUITests.xcresult
+          if-no-files-found: ignore
+          retention-days: 14
