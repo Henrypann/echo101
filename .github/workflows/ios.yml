@@ -39,7 +39,8 @@ jobs:
         run: |
           ECHO_SIMULATOR=$(xcrun simctl list devices available -j | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const d=Object.values(JSON.parse(s).devices).flat().find(d=>d.name.startsWith("iPhone"));if(!d)process.exit(1);process.stdout.write(d.udid)})')
           xcodebuild -quiet -project Echo101.xcodeproj -scheme Echo101 \
-            -destination "platform=iOS Simulator,id=$ECHO_SIMULATOR" \
+            -destination "platform=iOS Simulator,id=$ECHO_SIMULATOR,arch=$(uname -m)" \
+            -parallel-testing-enabled NO \
             -derivedDataPath "$RUNNER_TEMP/echo-simulator" \
             -resultBundlePath "$RUNNER_TEMP/EchoUITests.xcresult" \
             CODE_SIGNING_ALLOWED=NO test
