@@ -1,0 +1,19 @@
+{
+  "runURL": "https://github.com/Henrypann/echo101/actions/runs/36685233286",
+  "commit": "94c0d0a538a4239bb305f386b76b510b2a201adc",
+  "source": "XCTest result bundle; xcresulttool test-results summary and tests",
+  "device": "iPhone 16 Pro",
+  "osVersion": "18.5",
+  "platform": "iOS Simulator",
+  "architecture": "arm64",
+  "passed": 4,
+  "failed": 0,
+  "skipped": 0,
+  "runtimeWarnings": [],
+  "tests": [
+    {"name": "testCaptureCanBeCancelledWithoutStartingMicrophone", "result": "Passed"},
+    {"name": "testChildScreensDoNotExposeDraftsOrParentNotes", "result": "Passed"},
+    {"name": "testMomentExpressionPersistsAndCanBeDeleted", "result": "Passed"},
+    {"name": "testSettingsDiagnosticsAndCloudOffByDefault", "result": "Passed"}
+  ]
+}

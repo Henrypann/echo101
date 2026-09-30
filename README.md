@@ -99,4 +99,4 @@ xcodebuild -project Echo101.xcodeproj -scheme Echo101 \
 
 UI 测试需连接设备并具备测试运行器签名名额；免费签名的设备名额不足时，主 App 安装成功不意味着 UI 测试可运行。签名到期后重新签名覆盖安装。
 
-当前 **Core 23 + API 26，共 49 项通过，0 失败**；签名设备 `build-for-testing` 和无签名 Release 编译通过，主 App 已覆盖安装。4 项 iPhone XS UI 交互测试未执行。[GitHub Actions](.github/workflows/ios.yml) 已配置在 CI 预装的 iPhone 模拟器运行这些流程，结果待运行；CI 结果不能替代 XS 实测。系统认证、离线 20 句听感、录音中断、真实模型请求和家庭恢复仍需实测，见 [验收清单](docs/ACCEPTANCE.md)。
+当前 **Core 23 + API 26，共 49 项通过；CI 模拟器 UI 4 项通过，均为 0 失败**。UI 结果来自 iPhone 16 Pro / iOS 18.5 模拟器，测试记录见 [通过的 CI](https://github.com/Henrypann/echo101/actions/runs/36685233286) 和 [结果摘要](docs/ci-ui-results.json)。签名设备 `build-for-testing` 和无签名 Release 编译通过，主 App 已覆盖安装到 XS。XS 的测试运行器仍受签名名额限制，不能把模拟器结果当作 XS 实测。系统认证、离线 20 句听感、录音中断、真实模型请求和家庭恢复仍需实测，见 [验收清单](docs/ACCEPTANCE.md)。
