@@ -103,7 +103,15 @@ final class AppModel: ObservableObject {
         let token = UUID(); gateToken = token
         parentAuthentication = context; isAuthenticatingParent = true
         do {
-            let granted = try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Open Echo's parent area to manage family moments and privacy settings.")
+            // Keep LAContext on the main actor. Older SDKs' async bridge moves a
+            // non-Sendable context across executors; the callback API does not.
+            let granted: Bool = try await withCheckedThrowingContinuation { continuation in
+                context.evaluatePolicy(.deviceOwnerAuthentication,
+                    localizedReason: "Open Echo's parent area to manage family moments and privacy settings.") { granted, error in
+                    if let error { continuation.resume(throwing: error) }
+                    else { continuation.resume(returning: granted) }
+                }
+            }
             guard gateToken == token else { return }
             isAuthenticatingParent = false; parentAuthentication = nil
             if granted { audio?.interrupt(); api.cancel(); stopActivityReminder(); parentTab = 0; isParentMode = true }
