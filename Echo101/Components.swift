@@ -158,7 +158,7 @@ final class HoldRingView: UIView {
     private let track = CAShapeLayer()
     private let ring = CAShapeLayer()
     private let label = UILabel()
-    private var displayLink: CADisplayLink?
+    private let ticker = DisplayLinkBox()
     private var startedAt: CFTimeInterval = 0
     private var completed = false
     private let holdDuration: CFTimeInterval = 3
@@ -191,7 +191,7 @@ final class HoldRingView: UIView {
 
     required init?(coder: NSCoder) { nil }
 
-    deinit { displayLink?.invalidate() }
+    deinit { ticker.invalidate() }
 
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -212,10 +212,10 @@ final class HoldRingView: UIView {
         guard !completed else { return }
         startedAt = CACurrentMediaTime()
         ring.strokeEnd = 0
-        displayLink?.invalidate()
+        ticker.invalidate()
         let link = CADisplayLink(target: self, selector: #selector(tick))
         link.add(to: .main, forMode: .common)
-        displayLink = link
+        ticker.link = link
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -232,8 +232,7 @@ final class HoldRingView: UIView {
 
     private func cancelIfNeeded() {
         guard !completed else { return }
-        displayLink?.invalidate()
-        displayLink = nil
+        ticker.invalidate()
         ring.strokeEnd = 0
     }
 
@@ -247,10 +246,18 @@ final class HoldRingView: UIView {
     private func finish() {
         guard !completed else { return }
         completed = true
-        displayLink?.invalidate()
-        displayLink = nil
+        ticker.invalidate()
         ring.strokeEnd = 1
         onComplete?()
+    }
+}
+
+/// CADisplayLink is not Sendable, and a UIView deinit cannot touch it directly.
+private final class DisplayLinkBox: @unchecked Sendable {
+    var link: CADisplayLink?
+    func invalidate() {
+        link?.invalidate()
+        link = nil
     }
 }
 
