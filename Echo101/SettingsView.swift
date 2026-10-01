@@ -230,11 +230,11 @@ struct ExportFile: Identifiable {
 
 struct ShareSheet: UIViewControllerRepresentable {
     let url: URL
-    var onFinish: (Bool) -> Void
+    var onFinish: @MainActor (Bool) -> Void
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
         let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        nonisolated(unsafe) let finish = onFinish
+        nonisolated(unsafe) let finish: @MainActor (Bool) -> Void = onFinish
         controller.completionWithItemsHandler = { _, completed, _, _ in
             let finished = completed
             Task { @MainActor in finish(finished) }
