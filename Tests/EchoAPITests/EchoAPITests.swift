@@ -11,9 +11,15 @@ import Testing
 
 @MainActor private final class MockWiFi: WiFiMonitoring {
     var available = true
+    var reachable = true
     private var update: (@MainActor (Bool) -> Void)?
     func start(_ update: @escaping @MainActor (Bool) -> Void) { self.update = update }
-    func change(_ available: Bool) { self.available = available; update?(available) }
+    func change(_ available: Bool) { setPath(available: available, reachable: available) }
+    func setPath(available: Bool, reachable: Bool) {
+        self.available = available
+        self.reachable = reachable
+        update?(available)
+    }
 }
 
 @MainActor private final class MockTransport: ModelTransport {
@@ -150,6 +156,16 @@ private final class StubURLProtocol: URLProtocol, @unchecked Sendable {
         let body = try #require(JSONSerialization.jsonObject(with: fx.transport.requests[0].httpBody!) as? [String: Any])
         #expect(body["max_tokens"] as? Int == 32)
         #expect((body["messages"] as? [[String: String]])?[1]["content"] == "Connection test.")
+    }
+
+    @Test func cellularToggleUsesReachablePath() async throws {
+        let fx = Fixture(); defer { fx.cleanUp() }
+        fx.service.configuration.allowsCellular = true
+        fx.wifi.setPath(available: false, reachable: true)
+        _ = try await fx.service.generate(sceneText: "wash hands")
+        let request = try #require(fx.transport.requests.first)
+        #expect(request.allowsCellularAccess && request.allowsExpensiveNetworkAccess)
+        #expect(!request.allowsConstrainedNetworkAccess)
     }
 
     @Test func disabledMissingKeyAndWifiFailBeforeRequest() async {

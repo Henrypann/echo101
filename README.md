@@ -1,105 +1,67 @@
 # Echo
 
-把每天的小事，变成一起说出的英语。Echo 是面向 2–5 岁亲子家庭的原生 iPhone App：记下生活片段，家长确认一个词或短句，听示范、一起说，再回到真实生活中使用。
+给爷爷奶奶用的 iPhone 应用。打开就是「说一句」：点一下，说中文，听到这句自己的英文。另外三个标签是「单词」「今天」「爸妈」。
 
-**v0.2.0 · build 2 · iOS 17+**。界面使用英文，生活片段、释义和家长提示支持中文。家庭数据保存在手机；无需账号、服务器或 Mac 常驻。
+家庭自用。不需要 App Store、TestFlight 或付费开发者账号。用 Xcode 的免费 Apple ID，经 USB 装到 iPhone XS（A12，最高 iOS 18）。最低系统 iOS 17。
 
-本版已实现离线词句本、系统英语示范、跟说录音、短时场景采集、可选模型候选，以及手动导出恢复；已覆盖安装到 iPhone XS。代码与页面可供家庭试用，真实声线、录音中断和模型服务的设备验收状态见 [验收清单](docs/ACCEPTANCE.md)。
+家庭数据只在这台手机上。仓库里没有孩子姓名、真实录音、API Key 或家里的句子。
 
-## 两种模式
+## 四个标签
 
-| 模式 | 页面 | 使用方式 |
-| --- | --- | --- |
-| Children | Today / Explore / My World | 听家长已确认的表达，按生活场景探索，再遇见熟悉的内容；低龄孩子由家长陪同 |
-| Parents | Overview / Moments / Settings | 通过系统设备认证后管理生活片段、审核表达和设置隐私；返回儿童区会重新锁定家长入口 |
+| 标签 | 做什么 |
+| --- | --- |
+| 说一句 | 默认页。点一下开始、再点一下停止。听到 3 秒安静会自己停，最长 20 秒。先对本地句库；对不上、并且爸妈开过一次同意、也填了 Key，才把识别出的文字发给模型。模型句子标「待爸妈确认」，不会自动进句库。 |
+| 单词 | 常用词和置顶的「杭州旅行」。点一行先读这个词，再打开详情。详情里的英文单词可以单独点读；「播放」读单词，再慢读例句，再正常读例句。 |
+| 今天 | 今天说过的句子，按时间排列。点一行听英文（先慢后正常）。有孩子跟读时可以「听孩子」。不能改、不能删。 |
+| 爸妈 | 点进去是普通页面，写着「这里是爸妈用的」，并显示还有几句等确认。按住「按住 3 秒进入」三秒，外圈转满才进去。离开这个标签或 App 进后台会重新锁上。API Key 那一页才用面容或密码。 |
 
-App 非活跃时遮罩私人内容，切到后台后锁回儿童区；真实认证、锁屏和中断行为仍需设备验收。
+离开超过 10 分钟再回来，会回到「说一句」，爸妈页也会重新锁上。不到 10 分钟只重新锁爸妈，停在刚才的标签。
 
-角色、字标、场景插画和语义色来自 Echo 原创视觉系统。八个关键原生页面已接入，使用奶油底、珊瑚橙和靛蓝，支持深浅外观与 Dynamic Type。详情见 [设计说明](Design/README.md)。
+## 爸妈一次性设置
 
-<img src="docs/screenshots/today-light.png" width="260" alt="Echo Today 原生浅色页面">
+1. 用 Mac 上的 Xcode 打开 `Echo101.xcodeproj`，用免费 Apple ID 登录，Bundle ID 保持 `com.henrypann.echo101`，用 USB 装到 iPhone。免费签名大约 7 天过期，过期后重新签名再装一次。免费账号最多同时签 3 台设备。
+2. 第一次打开时允许麦克风，并允许语音识别。识别用系统的普通话（中国大陆）设备端识别（`SFSpeechRecognizer`，`zh-CN`，`requiresOnDeviceRecognition = true`），不使用只在 iOS 26 才有的 Speech API。
+3. 在系统设置里下载「普通话（中国大陆）」听写资源。没有这份资源时，App 会说「请让爸妈看看手机」，并在爸妈页记一条待处理事项。
+4. 下载增强或高质量的美式英语声音（Enhanced / Premium，US English）。「说一句」和「单词」都用这一条英语声线。爸妈页可以换已安装的英语声音。
+5. 需要更大的字时，在系统设置里把文字调大。老人这一侧的字不小于 20pt。
+6. 可选：打开引导式访问，避免误触 Home 键。
+7. 模型不是必须的。要对不上句库时才用 DeepSeek 或小米 MiMo。爸妈页打开一次同意即可（发出去的是识别后的中文文字，不是录音）。默认只走 Wi-Fi；要走蜂窝时再打开「允许使用蜂窝数据」。Key 只存在这台手机的钥匙串里。
 
-页面预览：[Explore](docs/screenshots/explore-light.png) · [Listen & Say](docs/screenshots/listen-light.png) · [My World](docs/screenshots/world-light.png) · [Overview](docs/screenshots/overview-light.png) · [Add a Moment](docs/screenshots/moment-light.png) · [Review](docs/screenshots/review-light.png) · [Settings](docs/screenshots/settings-light.png) · [深色](docs/screenshots/today-dark.png) · [大字](docs/screenshots/overview-large.png)。这些是原生页面渲染截图，不等于点击、音频、认证或模型服务验收。
+## 杭州读音
 
-## 第一次打开
+「杭州旅行」里的专名可以在 `Sources/EchoCore/Resources/Vocabulary.json` 的 `ipa` 字段写音标。有这个字段时，朗读会带上 `AVSpeechSynthesisIPANotationAttribute`。
 
-1. 确保 iPhone 已设置设备密码；通过儿童区的家长入口完成系统认证，进入 Settings。
-2. 先不启用云端，选择并试听手机已有的英语声线。需要更多声线时，在系统设置中下载后返回刷新。
-3. 可添加内置的 20 个示例，试听 `I can say my ABC.`；`ABC` 需要逐个字母朗读时，把朗读文本改为 `I can say my A, B, C.`。
-4. 返回儿童区，试用 Listen / Slow / Parts；再按下面的流程记下自己的第一个生活片段。Parts 仅在表达填写了语块时可用。
+Henry 需要在 iPhone XS 上把每一条杭州词条听一遍。系统英语把拼音读错的，把覆盖音标写进对应条目的 `ipa`。杭州条目没有配图，也不从网上拉图片。
 
-先确认本地体验符合家庭需要，再决定是否填写模型 Key。无需连接 Mac，也无需开通模型服务才能开始。
+## 单词和星星
 
-## 从一个生活片段开始
+词表是包内只读 JSON。置顶分类靠 `pinned`，改数据就能换掉「杭州旅行」，不用改界面。分类顺序固定，不按使用次数重排，也没有上锁。
 
-1. 点儿童区右上角家长入口，完成系统设备认证，进入 **Moments → Add a Moment**。
-2. 先写发生了什么，再选场景。**Save Moment** 只保存到本机，不发送给模型。
-3. 打开 Moment，手动添加表达，例如 `A red car.` 和中文释义；也可主动请求可选的英语候选。
-4. 在审核页检查英文、释义、语块、朗读文本和 **Parent note**。**Keep as Draft** 留在家长区；**Confirm Expression** 后才进入儿童区。
-5. 在 **Today / Explore / My World** 中主动选择 **Listen / Slow / Parts**；Parts 使用家长填写的语块。
-
-确认、收藏和使用记录都不表示孩子已经掌握。家长提示不进入儿童区。Settings 可添加 20 个示例表达，包含 `I can say my ABC.`，供试听使用，不构成课程或能力记录。
-
-### 声音与录音
-
-- **Listen** 使用手机已安装的美式英语系统声线。Settings 可选择、预听和刷新声线；更多声线可在 iPhone 的辅助功能语音设置中下载。展示文本和朗读文本可分开填写，例如展示 `ABC`、朗读 `A, B, C`；系统朗读不会唱旋律。
-- **Say It Together** 打开跟说页，再主动点击 **Start Recording** 才录音，最多 30 秒。停止后先试听，选择 **Save Recording** 才长期保存；Settings → **Manage Recordings** 可播放或逐条确认删除。
-- **Add a Moment** 中的语音采集是独立可选操作，最多 45 秒。中文和英文分别选择，不自动区分说话人。
-- 场景转写仅在设备端识别可用且权限允许时执行，无云端转写回退。选择 **Use This Transcript** 后仍需检查文字；不可识别时可以回听并手动输入。
-- 临时采集音频在完成、取消或下一次启动清理。没有后台监听；权限提示、锁屏或后台中断后不会自行恢复录音。
-- **Session reminder** 可选 Off / 3 / 5 / 10 minutes，默认为 5 分钟。这是可调整的家庭偏好，不是医疗标准或使用目标，不请求通知权限。
-
-### 可选英语候选
-
-本地添加、朗读、录音和回放不需要 API Key。云端默认关闭，只在家长主动请求时使用。
-
-1. Settings 选择 DeepSeek 或 MiMo，填写自己的专用 API Key，点击 **Save Key** 并启用 **Enable cloud generation**。
-2. 连接非计费、非低数据模式的 Wi-Fi。**Test with a Sample** 只发送无私人内容的样例，也计入当日请求额度。
-3. 打开 Moment 的英语候选入口，编辑发送预览，勾选已移除姓名和私人信息，再明确同意发送。编辑预览会重置两项确认。
-4. 请求只发送预览中的场景文字，不附带音频、其他 Moments 或家庭库。最多三个候选先保存为 Draft；逐条审核后确认。
-
-默认模型 ID 为 [`deepseek-flash`](https://api-docs.deepseek.com/quick_start/pricing/) 和 [`mimo-v2.6-pro`](https://mimo.mi.com/models/en-US/mimo-v2.6-pro)，可在 Settings 修改。MiMo 当前使用按量付费 API 端点；Token Plan 使用独立 Key 和 base URL，不能把 Token Plan Key 粘贴到当前配置中混用。[MiMo 接入说明](https://mimo.mi.com/models/en-US/mimo-v2.6-pro)
-
-接口只访问供应商固定 HTTPS 端点，不接受自定义代理地址。请求 30 秒超时，每日合计最多 20 次；失败不重试、不自动切换供应商，Wi-Fi 恢复后不自动发送。低数据模式、热点或 VPN 路由可能触发保守阻止。关闭云端不影响本地功能。
-
-Key 仅存本机 Keychain，使用 `WhenUnlockedThisDeviceOnly`。移除 Key 不等于在供应商处撤销凭证；请设置供应商侧费用上限。去标识化由家长检查负责，应用不声称能自动识别所有姓名或敏感信息。模型输出不是儿童发展评估。
+孩子跟读结束后，按钮区域会显示一颗大星星和「录好了」，大约 1 秒。这个词会在列表右上角留下一颗小星星。星星只加不减，清空家庭数据也不会清掉。是否跟读过按词条 id 记在旁边的 `WordStars.json`，不会为了这一件事重写整本库。
 
 ## 数据与恢复
 
-- Core Data 保存版本化结构化快照，录音是独立 `.m4a` 文件。家庭目录、录音和导出文件使用 iOS 完整文件保护；家庭目录排除自动备份，不启用 CloudKit。
-- **Prepare Export** 创建 `.echo101` 恢复包，默认导出文字和使用记录；录音需主动勾选。密钥和临时采集音频不进入导出。
-- 恢复包是**未加密 JSON**，所选音频以 Base64 包含其中。分享后不再受 App 文件保护，请选择可信位置并自行管理副本。
-- 恢复只允许空库，先检查版本、引用关系、路径、大小和音频 SHA-256，再提交；不会覆盖已有家庭内容。
-- 恢复包上限 64 MiB，单录音 10 MiB，全部录音合计 32 MiB。可先导出不含录音的版本。
-- 家长提示会随表达保存、导出和恢复；旧数据没有该可选字段时仍可读取。
-- 删除 Moment 会删除关联表达、录音和使用记录；删除单条录音保留表达。已导出的历史副本不会自动更新。
-- 卸载会删除本地库。覆盖安装更新可保留数据；更新或换机前先导出。
+- 库的结构版本是 **2**。版本 1 的库和旧 `.echo101` 备份会迁到现在的句库和记录；比 2 新的版本会拒绝打开。
+- 导出包仍是未加密 JSON。分享完成或取消后，App 会删掉 `Exports/` 里的那份副本；每次启动也会清掉这个文件夹里的普通文件。
+- 爸妈页显示上次导出时间。超过 7 天或从未导出时，只在爸妈页提醒，不弹给老人。
+- 播放次数写在旁边的 `UsageLog.json`，离开 App 时再并进库。单条表达最多保留最近 30 次，全部使用记录最多 2000 条，避免写不进去。
+- 种子句（大约几十句日常话，来源是 `seed`）在第一次打开、库还是空的时候写入。它们算爸妈已经确认过的句子，可以改、可以删。只有种子、没有别的内容时，仍然可以恢复备份。
+- 卸载会删掉本机数据。换机或重装前先导出。
 
 ## 构建与测试
 
 ```text
-Echo101/                 SwiftUI、音频、设备权限、原生资产
-Sources/EchoCore/        数据、Core Data、录音文件、导出恢复
-Sources/EchoAPI/         供应商适配、Wi-Fi 门禁、Keychain、请求配额
-Tests/                  Core 与 mock 网络测试
-Echo101UITests/          独立测试库的设备 UI 测试
-Echo101.xcodeproj/       原生工程与共享 Scheme
-Design/                 视觉规范与设计变量
-docs/ACCEPTANCE.md       验收状态与家庭检查清单
+Echo101/                 SwiftUI、录音、朗读、四个标签
+Sources/EchoCore/        库、迁移、句库匹配、词表、导出恢复
+Sources/EchoAPI/         DeepSeek / MiMo、Wi-Fi 或蜂窝开关、钥匙串
+Tests/                   核心库与假网络测试
+Echo101UITests/          不打开麦克风、不联网的界面测试
 ```
-
-项目使用 Swift 6，无第三方运行时依赖。当前 Core Data 使用一个 `EchoState` 实体保存结构化快照，更新先验证、事务保存后再发布。未确认表达不能写入播放记录或录音。
-
-在项目根目录运行核心和模型测试：
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 swift test --disable-sandbox --scratch-path /tmp/echo101-tests
 ```
-
-模型测试使用假响应，不访问真实供应商或家庭内容。UI 测试使用独立目录、UserDefaults 和 Keychain service，不修改家庭库。
-
-使用 Xcode 打开 `Echo101.xcodeproj`，选择 Echo101 Scheme，配置自己的开发团队和 iPhone。覆盖更新时保持 Bundle ID `com.henrypann.echo101` 不变，无需删除 App。编译示例：
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
@@ -108,17 +70,4 @@ xcodebuild -project Echo101.xcodeproj -scheme Echo101 \
   -derivedDataPath /tmp/echo101-device-build build-for-testing
 ```
 
-UI 测试需连接设备并具备测试运行器签名名额；免费签名的设备名额不足时，主 App 安装成功不意味着 UI 测试可运行。签名到期后重新签名覆盖安装。
-
-### 已验证结果
-
-截至 2026-09-30，提交 `5b31169` 的 [CI 检查全部通过](https://github.com/Henrypann/echo101/actions/runs/36688870644)：**Core 23 + API 26，共 49 项单元测试；UI 4 项，0 失败、0 跳过**。UI 测试在 iPhone 16 Pro / iOS 18.5 模拟器上实际执行，覆盖：
-
-- 新增生活片段与表达，重启读回，删除表达并再次重启验证删除已持久化。
-- 设备能力诊断入口及云端默认关闭。
-- 不启动麦克风即可取消场景采集。
-- 儿童区只显示已确认表达，不暴露草稿与家长提示。
-
-CI 会在日志中输出测试数量和失败摘要，并保留 XCTest 结果包。仓库内的 [较早基线结果摘要](docs/ci-ui-results.json) 对应其中注明的历史运行。
-
-本地签名设备 `build-for-testing` 和无签名 Release 编译通过，主 App 已覆盖安装到 XS；24 组对比度、22 组自适应颜色、12 组插画和 3 种图标检查通过。XS 的测试运行器仍受签名名额限制，不能把模拟器结果当作 XS 实测。系统认证、离线 20 句听感、录音中断、真实模型请求和家庭恢复仍需按 [验收清单](docs/ACCEPTANCE.md) 实测。
+GitHub Actions 的「Echo checks」在 macOS 上跑单元测试、设计令牌检查、无签名编译和模拟器界面测试。模拟器通过不等于 XS 上的听感和识别已经验收。家庭验收见 [验收清单](docs/ACCEPTANCE.md)。
