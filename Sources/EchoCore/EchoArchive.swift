@@ -9,6 +9,10 @@ struct EchoArchive: Codable {
     var audio: [EchoArchiveAudio]
 }
 
+struct ArchiveAudioList: Decodable {
+    var audio: [EchoArchiveAudio]
+}
+
 struct EchoArchiveAudio: Codable {
     var filename: String
     var byteCount: Int
@@ -42,16 +46,33 @@ extension EchoStore {
     }
 
     public func restoreArchive(fromURL url: URL) throws {
-        guard snapshot.isEmpty else { throw EchoStoreError.restoreRequiresEmptyStore }
+        guard snapshot.isEmpty || snapshot.isPristineSeededLibrary else { throw EchoStoreError.restoreRequiresEmptyStore }
         let data = try boundedRead(url, maximum: EchoValidation.maxArchiveBytes)
         // Inspect version before decoding the potentially large base64 payload.
         guard let header = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               header["format"] as? String == "Echo101" else { throw EchoStoreError.corruptArchive }
         guard header["formatVersion"] as? Int == 1,
-              header["schemaVersion"] as? Int == EchoValidation.schemaVersion else { throw EchoStoreError.unsupportedVersion }
+              let schemaVersion = header["schemaVersion"] as? Int,
+              schemaVersion >= EchoValidation.minimumSchemaVersion,
+              schemaVersion <= EchoValidation.schemaVersion else { throw EchoStoreError.unsupportedVersion }
         let archive: EchoArchive
-        do { archive = try JSONDecoder().decode(EchoArchive.self, from: data) }
-        catch { throw EchoStoreError.corruptArchive }
+        if schemaVersion == EchoValidation.schemaVersion {
+            do { archive = try JSONDecoder().decode(EchoArchive.self, from: data) }
+            catch { throw EchoStoreError.corruptArchive }
+        } else {
+            guard let snapshotObject = header["snapshot"] else { throw EchoStoreError.corruptArchive }
+            let snapshotData: Data
+            do { snapshotData = try JSONSerialization.data(withJSONObject: snapshotObject) }
+            catch { throw EchoStoreError.corruptArchive }
+            let migrated: EchoSnapshot
+            do { migrated = try EchoMigration.snapshot(from: snapshotData, storedVersion: schemaVersion) }
+            catch let error as EchoStoreError { throw error }
+            catch { throw EchoStoreError.corruptArchive }
+            let audio: [EchoArchiveAudio]
+            do { audio = try JSONDecoder().decode(ArchiveAudioList.self, from: data).audio }
+            catch { throw EchoStoreError.corruptArchive }
+            archive = EchoArchive(snapshot: migrated, audio: audio)
+        }
         try EchoValidation.snapshot(archive.snapshot)
         guard archive.audio.count == archive.snapshot.clips.count else { throw EchoStoreError.corruptArchive }
         let clipNames = Set(archive.snapshot.clips.map(\.filename))

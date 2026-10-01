@@ -29,11 +29,17 @@ public enum EchoStoreError: Error, LocalizedError, Equatable {
 }
 
 enum EchoValidation {
-    static let schemaVersion = 1
+    /// Current on-disk schema. Version 1 snapshots are migrated; newer versions are rejected.
+    static let schemaVersion = 2
+    static let minimumSchemaVersion = 1
+    static let maxEventsPerTarget = 24
+    static let eventWriteBudget = 90_000
     static let maxArchiveBytes = 64 * 1_024 * 1_024
     static let maxClipBytes = 10 * 1_024 * 1_024
     static let maxTotalAudioBytes = 32 * 1_024 * 1_024
     static let allowedExtensions: Set<String> = ["m4a", "caf", "wav", "aiff", "mp3"]
+    static let recordOrigins: Set<String> = ["library", "model", "pending", "archived"]
+    static let clipRoles: Set<String> = ["expression", "grandparent", "child"]
 
     static func filename(_ value: String) throws {
         guard value.utf8.count <= 100,
@@ -48,11 +54,14 @@ enum EchoValidation {
     static func snapshot(_ snapshot: EchoSnapshot) throws {
         let ids = snapshot.moments.map(\.id) + snapshot.expressions.map(\.id)
             + snapshot.clips.map(\.id) + snapshot.events.map(\.id)
+            + snapshot.library.map(\.id) + snapshot.records.map(\.id)
         guard ids.count <= 100_000, Set(ids).count == ids.count else {
             throw EchoStoreError.invalidData("Duplicate identifiers or too many records.")
         }
         let moments = Set(snapshot.moments.map(\.id))
         let expressions = Dictionary(uniqueKeysWithValues: snapshot.expressions.map { ($0.id, $0) })
+        let libraryIDs = Set(snapshot.library.map(\.id))
+        let recordIDs = Set(snapshot.records.map(\.id))
         var filenames = Set<String>()
         for moment in snapshot.moments {
             try text(moment.scene, max: 160, required: true)
@@ -71,16 +80,97 @@ enum EchoValidation {
             try date(expression.createdAt)
             if let lastUsedAt = expression.lastUsedAt { try date(lastUsedAt) }
         }
+        for phrase in snapshot.library {
+            try text(phrase.english, max: 4_000, required: true)
+            try text(phrase.chinese, max: 4_000, required: true)
+            try text(phrase.scene, max: 160, required: true)
+            try text(phrase.source, max: 100, required: true)
+            guard phrase.keywords.count <= 20 else { throw EchoStoreError.invalidData("Too many keywords.") }
+            for keyword in phrase.keywords { try text(keyword, max: 80) }
+            try date(phrase.createdAt)
+            if let lastUsedAt = phrase.lastUsedAt { try date(lastUsedAt) }
+        }
+        for record in snapshot.records {
+            guard recordOrigins.contains(record.origin) else { throw EchoStoreError.invalidData("Unknown record origin.") }
+            try text(record.recognizedText, max: 4_000, required: true)
+            try text(record.scene, max: 160, required: true)
+            try date(record.createdAt)
+            switch record.origin {
+            case "library":
+                guard !record.needsConfirmation, let phraseID = record.phraseID, libraryIDs.contains(phraseID) else {
+                    throw EchoStoreError.invalidData("Library record is not linked to a confirmed phrase.")
+                }
+                try text(record.english, max: 4_000, required: true)
+                try text(record.chinese, max: 4_000, required: true)
+            case "model":
+                guard record.needsConfirmation, record.phraseID == nil else {
+                    throw EchoStoreError.invalidData("A model sentence cannot join the library before a parent confirms it.")
+                }
+                try text(record.english, max: 4_000, required: true)
+                try text(record.chinese, max: 4_000, required: true)
+            case "pending":
+                guard record.needsConfirmation, record.phraseID == nil else {
+                    throw EchoStoreError.invalidData("A pending line is waiting for a parent.")
+                }
+                try text(record.english, max: 4_000)
+                try text(record.chinese, max: 4_000)
+            default:
+                guard !record.needsConfirmation, record.phraseID == nil else {
+                    throw EchoStoreError.invalidData("Archived record is inconsistent.")
+                }
+                try text(record.english, max: 4_000)
+                try text(record.chinese, max: 4_000)
+            }
+        }
         for clip in snapshot.clips {
-            guard expressions[clip.expressionID]?.isConfirmed == true else { throw EchoStoreError.invalidData("Recording has no confirmed expression.") }
+            if let expressionID = clip.expressionID {
+                guard clip.recordID == nil, expressions[expressionID]?.isConfirmed == true else {
+                    throw EchoStoreError.invalidData("Recording has no confirmed expression.")
+                }
+            } else if let recordID = clip.recordID {
+                guard recordIDs.contains(recordID), clip.role == "grandparent" || clip.role == "child" else {
+                    throw EchoStoreError.invalidData("Recording has no speech record.")
+                }
+            } else {
+                throw EchoStoreError.invalidData("Recording has no owner.")
+            }
+            guard clipRoles.contains(clip.role) else { throw EchoStoreError.invalidData("Unknown recording role.") }
             try filename(clip.filename)
             guard filenames.insert(clip.filename.lowercased()).inserted else { throw EchoStoreError.invalidData("Duplicate recording filename.") }
             try date(clip.createdAt)
         }
         for event in snapshot.events {
-            guard expressions[event.expressionID]?.isConfirmed == true else { throw EchoStoreError.invalidData("Usage has no confirmed expression.") }
+            let confirmed = expressions[event.expressionID]?.isConfirmed == true
+            let inLibrary = libraryIDs.contains(event.expressionID)
+            guard confirmed || inLibrary else { throw EchoStoreError.invalidData("Usage has no confirmed expression.") }
+            guard (1...100_000).contains(event.count) else { throw EchoStoreError.invalidData("Invalid usage count.") }
             try date(event.createdAt)
         }
+        if let exported = snapshot.settings.lastExportAt { try date(exported) }
+    }
+
+    /// Keep usage from growing without bound: one row per target per day is aggregated by the store,
+    /// and each target keeps only the newest rows. Playback must never be able to fill the 100k cap.
+    static func cappedEvents(_ events: [UsageEvent], otherRecords: Int) -> [UsageEvent] {
+        var grouped: [UUID: [UsageEvent]] = [:]
+        for event in events where event.count > 0 {
+            grouped[event.expressionID, default: []].append(event)
+        }
+        var capped: [UsageEvent] = []
+        for (_, items) in grouped {
+            let newest = items.sorted { newer($0, $1, date: { $0.createdAt }, id: { $0.id }) }
+            capped.append(contentsOf: newest.prefix(maxEventsPerTarget))
+        }
+        let budget = max(0, eventWriteBudget - otherRecords)
+        if capped.count > budget {
+            capped.sort { newer($0, $1, date: { $0.createdAt }, id: { $0.id }) }
+            capped = Array(capped.prefix(budget))
+        }
+        return capped
+    }
+
+    static func newer<T>(_ a: T, _ b: T, date: (T) -> Date, id: (T) -> UUID) -> Bool {
+        date(a) == date(b) ? id(a).uuidString < id(b).uuidString : date(a) > date(b)
     }
 
     static func text(_ value: String, max: Int, required: Bool = false) throws {
@@ -94,13 +184,13 @@ enum EchoValidation {
     }
 
     static func ordered(_ value: EchoSnapshot) -> EchoSnapshot {
-        func newer<T>(_ a: T, _ b: T, date: (T) -> Date, id: (T) -> UUID) -> Bool {
-            date(a) == date(b) ? id(a).uuidString < id(b).uuidString : date(a) > date(b)
-        }
         return EchoSnapshot(
             moments: value.moments.sorted { newer($0, $1, date: { $0.createdAt }, id: { $0.id }) },
             expressions: value.expressions.sorted { newer($0, $1, date: { $0.createdAt }, id: { $0.id }) },
             clips: value.clips.sorted { newer($0, $1, date: { $0.createdAt }, id: { $0.id }) },
-            events: value.events.sorted { newer($0, $1, date: { $0.createdAt }, id: { $0.id }) })
+            events: value.events.sorted { newer($0, $1, date: { $0.createdAt }, id: { $0.id }) },
+            library: value.library.sorted { newer($0, $1, date: { $0.createdAt }, id: { $0.id }) },
+            records: value.records.sorted { newer($0, $1, date: { $0.createdAt }, id: { $0.id }) },
+            settings: value.settings)
     }
 }

@@ -300,7 +300,7 @@ private final class StubURLProtocol: URLProtocol, @unchecked Sendable {
 
     @Test func ephemeralSessionPrivacyPolicy() {
         let config = SessionModelTransport.configuration()
-        #expect(!config.allowsCellularAccess && !config.allowsExpensiveNetworkAccess && !config.allowsConstrainedNetworkAccess)
+        #expect(config.allowsCellularAccess && config.allowsExpensiveNetworkAccess && !config.allowsConstrainedNetworkAccess)
         #expect(!config.waitsForConnectivity && !config.httpShouldSetCookies)
         #expect(config.urlCache == nil && config.urlCredentialStorage == nil && config.httpCookieStorage == nil)
         #expect(config.timeoutIntervalForRequest == 30 && config.timeoutIntervalForResource == 30)
@@ -398,6 +398,18 @@ private final class StubURLProtocol: URLProtocol, @unchecked Sendable {
         for content in ["{\"ok\":1}", "{\"ok\":false}", "{\"ok\":true,\"text\":\"secret\"}"] {
             #expect(throws: ModelServiceError.malformedResponse) { try ModelCodec.connection(Data(content.utf8)) }
         }
+    }
+
+    @Test func cellularToggleIsOffUntilAParentAllowsIt() async throws {
+        let fx = Fixture(); defer { fx.cleanUp() }
+        #expect(!fx.service.configuration.allowCellular)
+        _ = try await fx.service.generate(sceneText: "wash hands")
+        let wifiOnly = try #require(fx.transport.requests.first)
+        #expect(!wifiOnly.allowsCellularAccess && !wifiOnly.allowsExpensiveNetworkAccess && !wifiOnly.allowsConstrainedNetworkAccess)
+        fx.service.configuration.allowCellular = true
+        _ = try await fx.service.generate(sceneText: "wash hands again")
+        let cellular = try #require(fx.transport.requests.last)
+        #expect(cellular.allowsCellularAccess && cellular.allowsExpensiveNetworkAccess && !cellular.allowsConstrainedNetworkAccess)
     }
 
     @Test func invalidUsageCannotLeakText() throws {

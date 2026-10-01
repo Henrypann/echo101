@@ -1,11 +1,29 @@
+import AudioToolbox
 import AVFoundation
 import Combine
 import Speech
 import UIKit
 
 enum SpeechMode: Sendable { case normal, slow, parts }
-enum RecordingMode: Sendable { case context, practice }
+enum RecordingMode: Sendable { case context, practice, grandparent, child }
 enum AudioPhase: Sendable { case idle, speaking, recording, playingRecord, transcribing }
+
+enum ListenFailure: String, Sendable {
+    case permission
+    case speechPermission
+    case assets
+    case unavailable
+    case noAudio
+    case notRecognized
+    case interrupted
+}
+
+struct ListenResult: Sendable {
+    var transcript: String
+    var duration: TimeInterval
+    var audioURL: URL?
+    var failure: ListenFailure?
+}
 
 struct EchoVoice: Identifiable, Sendable {
     let id: String
@@ -29,8 +47,11 @@ final class AudioController: NSObject, ObservableObject {
     @Published var errorMessage: String?
     @Published private(set) var onDeviceChinese = false
     @Published private(set) var onDeviceEnglish = false
+    /// True while the system permission dialog is up, so inactivity does not cancel the turn.
+    @Published private(set) var awaitingSystemPermission = false
 
     var isRecording: Bool { phase == .recording }
+    var activeRecordingMode: RecordingMode { recordingMode }
 
     private static let voicePreferenceKey = "echo101.selectedVoiceID"
     private let temporaryDirectory: URL
@@ -54,6 +75,12 @@ final class AudioController: NSObject, ObservableObject {
     private var recordingLocale = "zh-CN"
     private var recordingLimit: TimeInterval = 30
     private var contextCanTranscribe = false
+    private var silenceStarted: Date?
+    private var listenHandler: ((ListenResult) -> Void)?
+    private var speechIdleHandler: (() -> Void)?
+    private var childRecordingHandler: ((URL?) -> Void)?
+    private let silenceLimit: TimeInterval = 3
+    private let silenceThreshold: Float = -42
 
     init(temporaryDirectory: URL, defaults: UserDefaults = .standard) {
         self.temporaryDirectory = temporaryDirectory.standardizedFileURL
@@ -124,20 +151,27 @@ final class AudioController: NSObject, ObservableObject {
         }
     }
 
-    func startRecording(mode: RecordingMode, localeIdentifier: String = "zh-CN") async {
+    func startRecording(mode: RecordingMode, localeIdentifier: String = "zh-CN", permissionsAlreadyGranted: Bool = false) async {
         guard temporaryRecordingURL == nil else {
             errorMessage = "Save or discard the current recording before starting another."
             return
         }
-        interrupt()
+        if phase != .idle { interrupt() }
         errorMessage = nil
+        if permissionsAlreadyGranted {
+            await capture(mode: mode, localeIdentifier: localeIdentifier, canTranscribe: mode == .grandparent || mode == .context)
+            return
+        }
         let token = operationID
+        awaitingSystemPermission = true
         let allowed = await AVAudioApplication.requestRecordPermission()
         guard operationID == token else {
+            awaitingSystemPermission = false
             if phase == .idle { errorMessage = "Permission check finished. Tap Record again when you are ready." }
             return
         }
         guard allowed else {
+            awaitingSystemPermission = false
             errorMessage = "Microphone access is off. Enable it in Settings to record. You can still enter a note manually."
             return
         }
@@ -146,6 +180,7 @@ final class AudioController: NSObject, ObservableObject {
             if supportsOnDevice(locale: localeIdentifier) {
                 let authorization = await speechAuthorization()
                 guard operationID == token else {
+                    awaitingSystemPermission = false
                     if phase == .idle { errorMessage = "Permission check finished. Tap Record again when you are ready." }
                     return
                 }
@@ -157,11 +192,17 @@ final class AudioController: NSObject, ObservableObject {
                 errorMessage = "On-device transcription is unavailable for this language. Your audio will be kept; enter a note manually."
             }
         }
+        awaitingSystemPermission = false
         guard operationID == token, temporaryRecordingURL == nil else { return }
         guard UIApplication.shared.applicationState == .active else {
             errorMessage = "Return to the app and tap Record again."
             return
         }
+        await capture(mode: mode, localeIdentifier: localeIdentifier, canTranscribe: canTranscribe)
+    }
+
+    private func capture(mode: RecordingMode, localeIdentifier: String, canTranscribe: Bool) async {
+        let token = operationID
         var createdURL: URL?
         do {
             try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true,
@@ -188,7 +229,13 @@ final class AudioController: NSObject, ObservableObject {
             nextRecorder.delegate = recordingCallbacks
             guard nextRecorder.prepareToRecord() else { throw AudioSetupError.recording }
             try protectTemporaryFile(url)
-            recordingLimit = mode == .context ? 45 : 30
+            switch mode {
+            case .context: recordingLimit = 45
+            case .grandparent: recordingLimit = 20
+            case .child: recordingLimit = 10
+            case .practice: recordingLimit = 30
+            }
+            nextRecorder.isMeteringEnabled = mode == .grandparent
             guard nextRecorder.record(forDuration: recordingLimit) else { throw AudioSetupError.recording }
             recorder = nextRecorder
             recordingMode = mode
@@ -196,6 +243,7 @@ final class AudioController: NSObject, ObservableObject {
             contextCanTranscribe = canTranscribe
             transcript = ""
             elapsed = 0
+            silenceStarted = nil
             temporaryRecordingURL = url
             phase = .recording
             trackElapsed(token: token)
@@ -224,7 +272,116 @@ final class AudioController: NSObject, ObservableObject {
     }
 
     func stopRecording() {
-        finishRecording(transcribe: true)
+        finishRecording(transcribe: recordingMode == .context || recordingMode == .grandparent)
+    }
+
+    /// Tap to start a Mandarin turn. Permission dialogs do not count as leaving the app.
+    func beginGrandparentTurn(handler: @escaping (ListenResult) -> Void) async {
+        listenHandler = handler
+        guard temporaryRecordingURL == nil else {
+            deliverListen(ListenResult(transcript: "", duration: 0, audioURL: nil, failure: .interrupted))
+            return
+        }
+        interruptPlaybackOnly()
+        errorMessage = nil
+        let token = operationID
+        awaitingSystemPermission = true
+        let allowed = await AVAudioApplication.requestRecordPermission()
+        guard operationID == token else {
+            awaitingSystemPermission = false
+            deliverListen(ListenResult(transcript: "", duration: 0, audioURL: nil, failure: .interrupted))
+            return
+        }
+        guard allowed else {
+            awaitingSystemPermission = false
+            errorMessage = "请让爸妈看看手机"
+            deliverListen(ListenResult(transcript: "", duration: 0, audioURL: nil, failure: .permission))
+            return
+        }
+        guard supportsOnDevice(locale: "zh-CN") else {
+            awaitingSystemPermission = false
+            errorMessage = "请让爸妈看看手机"
+            deliverListen(ListenResult(transcript: "", duration: 0, audioURL: nil, failure: .assets))
+            return
+        }
+        let authorization = await speechAuthorization()
+        guard operationID == token else {
+            awaitingSystemPermission = false
+            deliverListen(ListenResult(transcript: "", duration: 0, audioURL: nil, failure: .interrupted))
+            return
+        }
+        guard authorization == .authorized else {
+            awaitingSystemPermission = false
+            errorMessage = "请让爸妈看看手机"
+            deliverListen(ListenResult(transcript: "", duration: 0, audioURL: nil, failure: .speechPermission))
+            return
+        }
+        if UIApplication.shared.applicationState != .active {
+            try? await Task.sleep(for: .milliseconds(400))
+        }
+        awaitingSystemPermission = false
+        guard operationID == token, UIApplication.shared.applicationState == .active else {
+            deliverListen(ListenResult(transcript: "", duration: 0, audioURL: nil, failure: .interrupted))
+            return
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        AudioServicesPlaySystemSound(1104)
+        await startRecording(mode: .grandparent, localeIdentifier: "zh-CN", permissionsAlreadyGranted: true)
+        if phase != .recording {
+            let failure: ListenFailure = errorMessage == nil ? .unavailable : .unavailable
+            deliverListen(ListenResult(transcript: "", duration: elapsed, audioURL: temporaryRecordingURL, failure: failure))
+        }
+    }
+
+    func endGrandparentTurn() {
+        guard recordingMode == .grandparent, phase == .recording else { return }
+        stopRecording()
+    }
+
+    /// Replays one English sentence, then records the child for up to 10 seconds. No score.
+    func recordChildAfterEnglish(_ english: String) async -> URL? {
+        await speakEnglishAndWait(english)
+        guard phase != .recording else { return nil }
+        return await withCheckedContinuation { continuation in
+            childRecordingHandler = { url in continuation.resume(returning: url) }
+            Task { @MainActor in
+                await self.startRecording(mode: .child, localeIdentifier: "en-US")
+                if self.phase != .recording {
+                    self.finishChildRecording(url: nil)
+                }
+            }
+        }
+    }
+
+    func speakEnglishLesson(_ text: String) {
+        speakSequence(text, language: "en-US", rates: [0.38, AVSpeechUtteranceDefaultSpeechRate])
+    }
+
+    func speakMandarin(_ text: String) {
+        speakSequence(text, language: "zh-CN", rates: [AVSpeechUtteranceDefaultSpeechRate])
+    }
+
+    func speakEnglishAndWait(_ text: String) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            var resumed = false
+            speechIdleHandler = {
+                guard !resumed else { return }
+                resumed = true
+                continuation.resume()
+            }
+            speakSequence(text, language: "en-US", rates: [AVSpeechUtteranceDefaultSpeechRate])
+            if phase != .speaking {
+                speechIdleHandler?()
+                speechIdleHandler = nil
+            }
+        }
+    }
+
+    func relinquishTemporaryRecording() {
+        if let url = temporaryRecordingURL { ownedTemporaryURLs.remove(url) }
+        temporaryRecordingURL = nil
+        transcript = ""
+        elapsed = 0
     }
 
     func playRecording(url: URL) {
@@ -273,6 +430,12 @@ final class AudioController: NSObject, ObservableObject {
 
     /// Lifecycle interruptions preserve the unsaved audio and never start transcription.
     func interrupt() {
+        let handler = listenHandler
+        let childHandler = childRecordingHandler
+        let wasGrandparent = recordingMode == .grandparent && (phase == .recording || phase == .transcribing)
+        let wasChild = recordingMode == .child && phase == .recording
+        listenHandler = nil
+        childRecordingHandler = nil
         isSpeechPaused = false
         operationID = UUID()
         recognitionTask?.cancel()
@@ -297,6 +460,102 @@ final class AudioController: NSObject, ObservableObject {
         playbackCallbacks = nil
         phase = .idle
         deactivateSession()
+        if wasGrandparent {
+            if let url = temporaryRecordingURL { _ = removeOwnedTemporaryFile(url) }
+            temporaryRecordingURL = nil
+            transcript = ""
+            handler?(ListenResult(transcript: "", duration: elapsed, audioURL: nil, failure: .interrupted))
+        }
+        if wasChild {
+            if let url = temporaryRecordingURL { _ = removeOwnedTemporaryFile(url) }
+            temporaryRecordingURL = nil
+            childHandler?(nil)
+        }
+        speechIdleHandler?()
+        speechIdleHandler = nil
+    }
+
+    private func interruptPlaybackOnly() {
+        guard phase == .speaking || phase == .playingRecord else { return }
+        isSpeechPaused = false
+        operationID = UUID()
+        synthesizer.stopSpeaking(at: .immediate)
+        synthesizer.delegate = nil
+        speechCallbacks = nil
+        utterances.removeAll()
+        player?.stop()
+        player = nil
+        playbackCallbacks = nil
+        phase = .idle
+        deactivateSession()
+        speechIdleHandler?()
+        speechIdleHandler = nil
+    }
+
+    private func deliverListen(_ result: ListenResult) {
+        let handler = listenHandler
+        listenHandler = nil
+        handler?(result)
+    }
+
+    private func finishChildRecording(url: URL?) {
+        let handler = childRecordingHandler
+        childRecordingHandler = nil
+        handler?(url)
+    }
+
+    private func speakSequence(_ text: String, language: String, rates: [Float]) {
+        if phase == .recording { return }
+        interruptPlaybackOnly()
+        errorMessage = nil
+        let chunks = rates.map { _ in text.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        guard !chunks.isEmpty else {
+            speechIdleHandler?()
+            speechIdleHandler = nil
+            return
+        }
+        let voice: AVSpeechSynthesisVoice?
+        if language == "en-US" {
+            refreshCapabilities()
+            voice = AVSpeechSynthesisVoice(identifier: selectedVoiceID).flatMap { candidate in
+                candidate.language == "en-US" && voices.contains(where: { $0.id == candidate.identifier }) ? candidate : nil
+            }
+            if voice == nil {
+                errorMessage = "No installed US English voice is available. Add a voice in iPhone Settings and try again."
+                speechIdleHandler?()
+                speechIdleHandler = nil
+                return
+            }
+        } else {
+            voice = AVSpeechSynthesisVoice(language: language)
+            if voice == nil {
+                errorMessage = "没有可用的中文语音。"
+                speechIdleHandler?()
+                speechIdleHandler = nil
+                return
+            }
+        }
+        do {
+            try activatePlayback()
+            speechCallbacks = makeCallbacks(token: operationID)
+            synthesizer.delegate = speechCallbacks
+            phase = .speaking
+            for (index, rate) in rates.enumerated() {
+                let utterance = AVSpeechUtterance(string: text)
+                utterance.voice = voice
+                utterance.rate = rate
+                utterance.pitchMultiplier = 1.0
+                utterance.postUtteranceDelay = index == 0 && rates.count > 1 ? 0.35 : 0
+                utterances[ObjectIdentifier(utterance)] = operationID
+                synthesizer.speak(utterance)
+            }
+        } catch {
+            phase = .idle
+            deactivateSession()
+            errorMessage = "Speech playback could not start. Please try again."
+            speechIdleHandler?()
+            speechIdleHandler = nil
+        }
     }
 
     private func finishRecording(transcribe: Bool) {
@@ -308,10 +567,22 @@ final class AudioController: NSObject, ObservableObject {
         recordingCallbacks = nil
         elapsedTask?.cancel()
         elapsedTask = nil
+        let mode = recordingMode
+        let url = temporaryRecordingURL
+        let heard = elapsed
         phase = .idle
+        silenceStarted = nil
         deactivateSession()
-        if transcribe, recordingMode == .context, contextCanTranscribe, let url = temporaryRecordingURL {
+        if mode == .child {
+            finishChildRecording(url: url)
+            return
+        }
+        if transcribe, (mode == .context || mode == .grandparent), contextCanTranscribe, let url {
             transcribeContext(url: url, token: operationID)
+            return
+        }
+        if mode == .grandparent {
+            deliverListen(ListenResult(transcript: "", duration: heard, audioURL: url, failure: heard < 0.4 ? .noAudio : .notRecognized))
         }
     }
 
@@ -320,6 +591,9 @@ final class AudioController: NSObject, ObservableObject {
               recognizer.supportsOnDeviceRecognition,
               SFSpeechRecognizer.authorizationStatus() == .authorized else {
             errorMessage = "On-device transcription is unavailable. Your audio is kept; enter a note manually."
+            if recordingMode == .grandparent {
+                deliverListen(ListenResult(transcript: "", duration: elapsed, audioURL: url, failure: .unavailable))
+            }
             return
         }
         let request = SFSpeechURLRecognitionRequest(url: url)
@@ -340,7 +614,9 @@ final class AudioController: NSObject, ObservableObject {
                     self.finishTranscription()
                 } else if failed || isFinal {
                     self.finishTranscription()
-                    self.errorMessage = "On-device transcription could not finish. Your audio is kept; enter a note manually."
+                    if self.recordingMode != .grandparent {
+                        self.errorMessage = "On-device transcription could not finish. Your audio is kept; enter a note manually."
+                    }
                 }
             }
         }
@@ -348,7 +624,9 @@ final class AudioController: NSObject, ObservableObject {
             do { try await Task.sleep(for: .seconds(60)) } catch { return }
             guard let self, self.operationID == token, self.phase == .transcribing else { return }
             self.finishTranscription()
-            self.errorMessage = "On-device transcription timed out. Your audio is kept; enter a note manually."
+            if self.recordingMode != .grandparent {
+                self.errorMessage = "On-device transcription timed out. Your audio is kept; enter a note manually."
+            }
         }
     }
 
@@ -358,7 +636,17 @@ final class AudioController: NSObject, ObservableObject {
         activeRecognizer = nil
         recognitionTimeout?.cancel()
         recognitionTimeout = nil
+        let text = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let url = temporaryRecordingURL
+        let heard = elapsed
+        let mode = recordingMode
         phase = .idle
+        guard mode == .grandparent else { return }
+        if text.isEmpty || heard < 0.35 {
+            deliverListen(ListenResult(transcript: text, duration: heard, audioURL: url, failure: text.isEmpty ? .notRecognized : .noAudio))
+        } else {
+            deliverListen(ListenResult(transcript: text, duration: heard, audioURL: url, failure: nil))
+        }
     }
 
     private func trackElapsed(token: UUID) {
@@ -369,6 +657,19 @@ final class AudioController: NSObject, ObservableObject {
                 guard let self, self.operationID == token else { return }
                 if self.phase == .recording, let recorder = self.recorder {
                     self.elapsed = min(self.recordingLimit, recorder.currentTime)
+                    if self.recordingMode == .grandparent {
+                        recorder.updateMeters()
+                        let power = recorder.averagePower(forChannel: 0)
+                        if power < self.silenceThreshold {
+                            if self.silenceStarted == nil { self.silenceStarted = Date() }
+                            if let started = self.silenceStarted, Date().timeIntervalSince(started) >= self.silenceLimit {
+                                self.stopRecording()
+                                return
+                            }
+                        } else {
+                            self.silenceStarted = nil
+                        }
+                    }
                     if self.elapsed >= self.recordingLimit { self.stopRecording(); return }
                 } else if self.phase == .playingRecord, let player = self.player {
                     self.elapsed = player.currentTime
@@ -420,9 +721,12 @@ final class AudioController: NSObject, ObservableObject {
     private func observeLifecycle() {
         for name in [UIApplication.willResignActiveNotification, UIApplication.didEnterBackgroundNotification,
                      UIScene.willDeactivateNotification, AVAudioSession.mediaServicesWereResetNotification] {
-            observations.tokens.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+            observations.tokens.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                let inactiveOnly = note.name == UIApplication.willResignActiveNotification || note.name == UIScene.willDeactivateNotification
                 Task { @MainActor [weak self] in
-                    guard let self, self.phase != .idle else { return }
+                    guard let self else { return }
+                    if inactiveOnly && self.awaitingSystemPermission { return }
+                    guard self.phase != .idle else { return }
                     self.interrupt()
                 }
             })
@@ -447,6 +751,8 @@ final class AudioController: NSObject, ObservableObject {
             speechCallbacks = nil
             synthesizer.delegate = nil
             deactivateSession()
+            speechIdleHandler?()
+            speechIdleHandler = nil
         }
     }
 
