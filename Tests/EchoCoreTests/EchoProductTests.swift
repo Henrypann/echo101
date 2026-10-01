@@ -37,6 +37,37 @@ struct EchoProductTests {
         }
     }
 
+    @Test func vocabularyImagesResolveAndHangzhouPhotosAreAttributed() throws {
+        let catalog = try VocabularyCatalog.load()
+        var pictured = 0
+        var hangzhouPhotos = 0
+        for category in catalog.categories {
+            if !category.image.isEmpty {
+                #expect(VocabularyImages.resourceURL(named: category.image) != nil)
+            }
+            let common = category.id != "hangzhou"
+            for word in category.words {
+                if common {
+                    #expect(!word.image.isEmpty)
+                    #expect(word.credit == nil)
+                }
+                guard !word.image.isEmpty else { continue }
+                pictured += 1
+                #expect(VocabularyImages.resourceURL(named: word.image) != nil)
+                guard category.id == "hangzhou" else { continue }
+                hangzhouPhotos += 1
+                let credit = try #require(word.credit)
+                #expect(!credit.author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                #expect(!credit.license.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                #expect(credit.licenseURL.hasPrefix("https://"))
+                #expect(credit.sourceURL.hasPrefix("https://commons.wikimedia.org/"))
+            }
+        }
+        #expect(pictured == 237)
+        #expect(hangzhouPhotos == 26)
+        #expect(VocabularyImages.openMojiAttribution.contains("CC BY-SA 4.0"))
+    }
+
     @Test func seedLibraryIsOriginalEverydaySpeech() {
         let phrases = SeedLibrary.make()
         #expect(phrases.count >= 50)
