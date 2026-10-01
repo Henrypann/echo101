@@ -52,7 +52,7 @@ extension EchoStore {
             var total = 0
             var seen = Set<String>()
             for name in exported.referencedAudioFilenames where seen.insert(name.lowercased()).inserted {
-                let data = try boundedRead(audioURL(name), maximum: EchoValidation.maxClipBytes)
+                let data = try boundedRead(audioURL(filename: name), maximum: EchoValidation.maxClipBytes)
                 total += data.count
                 guard total <= EchoValidation.maxTotalAudioBytes else { throw EchoStoreError.archiveTooLarge }
                 audio.append(EchoArchiveAudio(filename: name, byteCount: data.count, sha256: Self.digest(data), data: data))

@@ -63,8 +63,8 @@ public final class EchoStore: ObservableObject {
             try loadStoredState(state)
             for clip in snapshot.clips { _ = try clipURL(for: clip) }
             for record in snapshot.records {
-                if let name = record.grandparentAudio { _ = try audioURL(name) }
-                if let name = record.childAudio { _ = try audioURL(name) }
+                if let name = record.grandparentAudio { _ = try audioURL(filename: name) }
+                if let name = record.childAudio { _ = try audioURL(filename: name) }
             }
         }
         try loadSideFiles()
