@@ -22,6 +22,13 @@ final class NoRedirectDelegate: NSObject, URLSessionTaskDelegate, Sendable {
 
 final class SessionModelTransport: ModelTransport, Sendable {
     let session: URLSession
+    /// Session used by the app. Requests still opt out of cellular unless a parent allows it.
+    static func familyConfiguration() -> URLSessionConfiguration {
+        let config = configuration()
+        config.allowsCellularAccess = true
+        config.allowsExpensiveNetworkAccess = true
+        return config
+    }
     static func configuration() -> URLSessionConfiguration {
         let config = URLSessionConfiguration.ephemeral
         config.allowsCellularAccess = false
@@ -52,18 +59,23 @@ final class SessionModelTransport: ModelTransport, Sendable {
 
 @MainActor protocol WiFiMonitoring: AnyObject {
     var available: Bool { get }
+    /// Any unconstrained path, including cellular. Wi-Fi-only calls ignore this.
+    var reachable: Bool { get }
     func start(_ update: @escaping @MainActor (Bool) -> Void)
 }
 
 @MainActor final class WiFiMonitor: WiFiMonitoring {
     private let monitor = NWPathMonitor()
     private(set) var available = false
+    private(set) var reachable = false
     func start(_ update: @escaping @MainActor (Bool) -> Void) {
         monitor.pathUpdateHandler = { [weak self] path in
-            let allowed = path.status == .satisfied && path.usesInterfaceType(.wifi) && !path.isExpensive && !path.isConstrained
+            let wifi = path.status == .satisfied && path.usesInterfaceType(.wifi) && !path.isExpensive && !path.isConstrained
+            let anyUnconstrained = path.status == .satisfied && !path.isConstrained
             Task { @MainActor [weak self] in
-                self?.available = allowed
-                update(allowed)
+                self?.available = wifi
+                self?.reachable = anyUnconstrained
+                update(wifi)
             }
         }
         monitor.start(queue: DispatchQueue(label: "com.henrypann.echo101.wifi"))

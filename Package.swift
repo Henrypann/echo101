@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "EchoAPI", targets: ["EchoAPI"])
     ],
     targets: [
-        .target(name: "EchoCore"),
+        .target(name: "EchoCore", resources: [.process("Resources")]),
         .target(name: "EchoAPI"),
         .testTarget(name: "EchoCoreTests", dependencies: ["EchoCore"]),
         .testTarget(name: "EchoAPITests", dependencies: ["EchoAPI"])

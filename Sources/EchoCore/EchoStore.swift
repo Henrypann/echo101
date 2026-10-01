@@ -14,6 +14,10 @@ public final class EchoStore: ObservableObject {
     private let fileManager = FileManager.default
     // A transaction fault seam used by synthetic unit tests, never persisted.
     var beforeSave: (() throws -> Void)?
+    /// Counts successful full-library encodes. Playback and word stars must not increment this.
+    public private(set) var fullStoreSaveCount = 0
+    public private(set) var repeatedWordIDs: [String] = []
+    private var pendingUsage: [UsageEvent] = []
 
     public init(directory: URL, inMemory: Bool = false) throws {
         guard directory.isFileURL, !directory.pathComponents.contains("..") else { throw EchoStoreError.unsafeFile }
@@ -56,14 +60,14 @@ public final class EchoStore: ObservableObject {
         let states = try context.fetch(NSFetchRequest<NSManagedObject>(entityName: "EchoState"))
         guard states.count <= 1 else { throw EchoStoreError.invalidData("Multiple library states.") }
         if let state = states.first {
-            guard state.value(forKey: "key") as? String == "library",
-                  state.value(forKey: "version") as? Int == EchoValidation.schemaVersion,
-                  let payload = state.value(forKey: "payload") as? Data else { throw EchoStoreError.unsupportedVersion }
-            let loaded = try JSONDecoder().decode(EchoSnapshot.self, from: payload)
-            try EchoValidation.snapshot(loaded)
-            snapshot = EchoValidation.ordered(loaded)
+            try loadStoredState(state)
             for clip in snapshot.clips { _ = try clipURL(for: clip) }
+            for record in snapshot.records {
+                if let name = record.grandparentAudio { _ = try audioURL(filename: name) }
+                if let name = record.childAudio { _ = try audioURL(filename: name) }
+            }
         }
+        try loadSideFiles()
         try cleanInterruptedImports()
         // Only raw direct-child files in this app-owned folder are removed.
         for url in try fileManager.contentsOfDirectory(at: temporaryDirectory, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey]) {
@@ -71,6 +75,7 @@ public final class EchoStore: ObservableObject {
             if values.isRegularFile == true && values.isSymbolicLink != true { try fileManager.removeItem(at: url) }
         }
         try cleanOrphanRecordings()
+        try clearExports()
     }
 
     @discardableResult
@@ -135,11 +140,175 @@ public final class EchoStore: ObservableObject {
         try persist(next)
     }
 
+    /// Updates memory and the small usage log only. It does not encode the whole library.
     public func recordUsage(expressionID: UUID, kind: UsageKind) throws {
         let index = try confirmedIndex(expressionID)
         let event = UsageEvent(expressionID: expressionID, kind: kind)
         var next = snapshot
-        next.events.append(event); next.expressions[index].lastUsedAt = event.createdAt
+        next.events.append(event)
+        next.events = EchoValidation.cappedEvents(next.events)
+        next.expressions[index].lastUsedAt = event.createdAt
+        pendingUsage.append(event)
+        do { try writeUsageLog() }
+        catch { pendingUsage.removeLast(); throw error }
+        snapshot = EchoValidation.ordered(next)
+    }
+
+    /// Folds the usage log into the library. Call when leaving the app, not on each playback.
+    public func flushUsage() throws {
+        guard !pendingUsage.isEmpty else { return }
+        try persist(snapshot)
+    }
+
+    public func markWordRepeated(_ id: String) throws {
+        let trimmed = id.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (1...80).contains(trimmed.count), !trimmed.contains("/"), !trimmed.contains("\\"), !trimmed.contains("\0") else {
+            throw EchoStoreError.invalidData("Invalid word id.")
+        }
+        guard !repeatedWordIDs.contains(trimmed) else { return }
+        repeatedWordIDs.append(trimmed)
+        do { try writeStars() }
+        catch { repeatedWordIDs.removeAll { $0 == trimmed }; throw error }
+    }
+
+    public func rotationPhrases() -> [LibraryPhrase] { snapshot.phrases }
+
+    public func installSeedPhrasesIfEmpty() throws {
+        guard snapshot.phrases.isEmpty, snapshot.moments.isEmpty, snapshot.records.isEmpty, snapshot.expressions.isEmpty else { return }
+        var next = snapshot
+        next.phrases = SeedLibrary.make()
+        try persist(next)
+    }
+
+    public func setModelConsent(granted: Bool, at date: Date = Date()) throws {
+        var next = snapshot
+        next.consentGrantedAt = granted ? date : nil
+        try persist(next)
+    }
+
+    public func setAllowCellular(_ allowed: Bool) throws {
+        var next = snapshot
+        next.allowCellular = allowed
+        try persist(next)
+    }
+
+    public func logSetupIssue(code: String, message: String) throws {
+        if snapshot.setupIssues.contains(where: { $0.code == code }) { return }
+        var next = snapshot
+        next.setupIssues.append(SetupIssue(code: code, message: message))
+        try persist(next)
+    }
+
+    public func resolveSetupIssue(code: String) throws {
+        guard snapshot.setupIssues.contains(where: { $0.code == code }) else { return }
+        var next = snapshot
+        next.setupIssues.removeAll { $0.code == code }
+        try persist(next)
+    }
+
+    @discardableResult
+    public func savePhrase(_ phrase: LibraryPhrase) throws -> LibraryPhrase {
+        var next = snapshot
+        if let index = next.phrases.firstIndex(where: { $0.id == phrase.id }) {
+            next.phrases[index] = phrase
+        } else { next.phrases.append(phrase) }
+        try persist(next)
+        return phrase
+    }
+
+    public func deletePhrase(id: UUID) throws {
+        guard snapshot.phrases.contains(where: { $0.id == id }) else { throw EchoStoreError.notFound }
+        var next = snapshot
+        next.phrases.removeAll { $0.id == id }
+        for index in next.records.indices where next.records[index].phraseID == id {
+            next.records[index].phraseID = nil
+        }
+        try persist(next)
+    }
+
+    @discardableResult
+    public func addSpokenRecord(_ record: SpokenRecord, audioTemporaryURL: URL? = nil) throws -> SpokenRecord {
+        var record = record
+        var created: String?
+        if let audioTemporaryURL {
+            created = try importAudio(from: audioTemporaryURL)
+            record.grandparentAudio = created
+        }
+        var next = snapshot
+        if let index = next.records.firstIndex(where: { $0.id == record.id }) { next.records[index] = record }
+        else { next.records.append(record) }
+        do { try persist(next) }
+        catch {
+            if let created { try? removeAudioFile(created) }
+            throw error
+        }
+        if let audioTemporaryURL { try? fileManager.removeItem(at: audioTemporaryURL) }
+        return record
+    }
+
+    public func updateSpokenRecord(_ record: SpokenRecord) throws {
+        guard snapshot.records.contains(where: { $0.id == record.id }) else { throw EchoStoreError.notFound }
+        var next = snapshot
+        guard let index = next.records.firstIndex(where: { $0.id == record.id }) else { throw EchoStoreError.notFound }
+        next.records[index] = record
+        try persist(next)
+    }
+
+    /// Parent confirmation is the only way a generated sentence joins the library.
+    @discardableResult
+    public func confirmSpokenRecord(id: UUID, english: String, chinese: String) throws -> LibraryPhrase {
+        guard let index = snapshot.records.firstIndex(where: { $0.id == id }) else { throw EchoStoreError.notFound }
+        let phrase = LibraryPhrase(chinese: chinese, english: english, keywords: [chinese], source: "parent")
+        var next = snapshot
+        next.phrases.append(phrase)
+        next.records[index].english = english
+        next.records[index].chineseMeaning = chinese
+        next.records[index].kind = .confirmed
+        next.records[index].phraseID = phrase.id
+        try persist(next)
+        return phrase
+    }
+
+    @discardableResult
+    public func attachChildAudio(recordID: UUID, temporaryURL: URL) throws -> SpokenRecord {
+        guard let index = snapshot.records.firstIndex(where: { $0.id == recordID }) else { throw EchoStoreError.notFound }
+        let filename = try importAudio(from: temporaryURL)
+        var next = snapshot
+        let previous = next.records[index].childAudio
+        next.records[index].childAudio = filename
+        do { try persist(next) }
+        catch { try? removeAudioFile(filename); throw error }
+        if let previous { try? removeAudioFile(previous) }
+        try? fileManager.removeItem(at: temporaryURL)
+        return snapshot.records.first(where: { $0.id == recordID }) ?? next.records[index]
+    }
+
+    public func deleteSpokenRecord(id: UUID) throws {
+        guard let record = snapshot.records.first(where: { $0.id == id }) else { throw EchoStoreError.notFound }
+        var next = snapshot
+        next.records.removeAll { $0.id == id }
+        try persist(next)
+        for name in [record.grandparentAudio, record.childAudio].compactMap({ $0 }) {
+            try? removeAudioFile(name)
+        }
+    }
+
+    public func eraseFamilyData() throws {
+        let names = snapshot.referencedAudioFilenames
+        try persist(EchoSnapshot())
+        for name in names { try? removeAudioFile(name) }
+    }
+
+    public func discardExport(at url: URL) throws {
+        let exports = directory.appendingPathComponent("Exports", isDirectory: true)
+        try safeRegularFile(url, in: exports)
+        guard url.pathExtension.lowercased() == "echo101" else { throw EchoStoreError.unsafeFile }
+        try fileManager.removeItem(at: url)
+    }
+
+    func markExported(at date: Date = Date()) throws {
+        var next = snapshot
+        next.lastExportAt = date
         try persist(next)
     }
 
@@ -178,6 +347,8 @@ public final class EchoStore: ObservableObject {
     }
 
     func persist(_ proposed: EchoSnapshot) throws {
+        var proposed = proposed
+        proposed.events = EchoValidation.cappedEvents(proposed.events)
         try EchoValidation.snapshot(proposed)
         let next = EchoValidation.ordered(proposed)
         let payload = try JSONEncoder().encode(next)
@@ -191,6 +362,149 @@ public final class EchoStore: ObservableObject {
             try context.save()
         } catch { context.rollback(); throw error }
         snapshot = next
+        fullStoreSaveCount += 1
+        pendingUsage = []
+        try? removeSideFile(usageLogURL)
+    }
+
+    private var usageLogURL: URL { directory.appendingPathComponent("UsageLog.json") }
+    private var starsURL: URL { directory.appendingPathComponent("WordStars.json") }
+
+    private func loadStoredState(_ state: NSManagedObject) throws {
+        guard state.value(forKey: "key") as? String == "library",
+              let version = Self.intValue(state.value(forKey: "version")),
+              let payload = state.value(forKey: "payload") as? Data else { throw EchoStoreError.unsupportedVersion }
+        guard (EchoValidation.minimumSchemaVersion...EchoValidation.schemaVersion).contains(version) else {
+            throw EchoStoreError.unsupportedVersion
+        }
+        let decoded: EchoSnapshot
+        do { decoded = try JSONDecoder().decode(EchoSnapshot.self, from: payload) }
+        catch { throw EchoStoreError.invalidData("The library could not be read.") }
+        var loaded = EchoMigration.migrate(decoded, from: version)
+        try applyUsageLog(to: &loaded)
+        if version < EchoValidation.schemaVersion {
+            try persist(loaded)
+        } else {
+            try EchoValidation.snapshot(loaded)
+            snapshot = EchoValidation.ordered(loaded)
+        }
+    }
+
+    private func applyUsageLog(to snapshot: inout EchoSnapshot) throws {
+        let logged = try readUsageLog()
+        guard !logged.isEmpty else { return }
+        let known = Set(snapshot.events.map(\.id))
+        let fresh = logged.filter { !known.contains($0.id) }
+        guard !fresh.isEmpty else { return }
+        for event in fresh {
+            guard let index = snapshot.expressions.firstIndex(where: { $0.id == event.expressionID && $0.isConfirmed }) else { continue }
+            snapshot.events.append(event)
+            if snapshot.expressions[index].lastUsedAt == nil || event.createdAt > snapshot.expressions[index].lastUsedAt! {
+                snapshot.expressions[index].lastUsedAt = event.createdAt
+            }
+            pendingUsage.append(event)
+        }
+        snapshot.events = EchoValidation.cappedEvents(snapshot.events)
+    }
+
+    private func loadSideFiles() throws {
+        if FileManager.default.fileExists(atPath: starsURL.path) {
+            let data = try boundedRead(starsURL, maximum: 512 * 1_024)
+            repeatedWordIDs = (try? JSONDecoder().decode([String].self, from: data)) ?? []
+        }
+        if pendingUsage.isEmpty, FileManager.default.fileExists(atPath: usageLogURL.path) {
+            pendingUsage = try readUsageLog()
+        }
+    }
+
+    private func readUsageLog() throws -> [UsageEvent] {
+        guard fileManager.fileExists(atPath: usageLogURL.path) else { return [] }
+        let data = try boundedRead(usageLogURL, maximum: 8 * 1_024 * 1_024)
+        if data.isEmpty { return [] }
+        return (try? JSONDecoder().decode([UsageEvent].self, from: data)) ?? []
+    }
+
+    private func writeUsageLog() throws {
+        let data = try JSONEncoder().encode(pendingUsage)
+        try writeReplacing(data, to: usageLogURL)
+    }
+
+    private func writeStars() throws {
+        let data = try JSONEncoder().encode(repeatedWordIDs)
+        try writeReplacing(data, to: starsURL)
+    }
+
+    func replaceWordStars(_ ids: [String]) throws {
+        repeatedWordIDs = ids
+        try writeStars()
+    }
+
+    private func writeReplacing(_ data: Data, to url: URL) throws {
+        try rejectSymlink(url)
+        let temporary = temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        try writePrivate(data, to: temporary)
+        if fileManager.fileExists(atPath: url.path) {
+            try safeRegularFile(url, in: directory)
+            try fileManager.removeItem(at: url)
+        }
+        try rejectSymlink(url)
+        try fileManager.moveItem(at: temporary, to: url)
+    }
+
+    private func removeSideFile(_ url: URL) throws {
+        guard fileManager.fileExists(atPath: url.path) else { return }
+        try safeRegularFile(url, in: directory)
+        try fileManager.removeItem(at: url)
+    }
+
+    private func clearExports() throws {
+        let exports = directory.appendingPathComponent("Exports", isDirectory: true)
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: exports.path, isDirectory: &isDirectory), isDirectory.boolValue else { return }
+        try rejectSymlinkComponents(exports)
+        let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey]
+        for url in try fileManager.contentsOfDirectory(at: exports, includingPropertiesForKeys: Array(keys)) {
+            let values = try url.resourceValues(forKeys: keys)
+            guard values.isRegularFile == true, values.isSymbolicLink != true else { continue }
+            try safeRegularFile(url, in: exports)
+            try fileManager.removeItem(at: url)
+        }
+    }
+
+    func importAudio(from temporaryURL: URL) throws -> String {
+        try safeRegularFile(temporaryURL, in: temporaryDirectory)
+        let ext = temporaryURL.pathExtension.lowercased()
+        guard EchoValidation.allowedExtensions.contains(ext) else { throw EchoStoreError.unsafeFile }
+        let data = try boundedRead(temporaryURL, maximum: EchoValidation.maxClipBytes)
+        guard !data.isEmpty else { throw EchoStoreError.invalidData("Empty recording.") }
+        let filename = UUID().uuidString + "." + ext
+        let destination = try unusedRecordingURL(filename)
+        try writePrivate(data, to: destination)
+        return filename
+    }
+
+    public func audioURL(filename: String) throws -> URL {
+        try EchoValidation.filename(filename)
+        let url = recordingsDirectory.appendingPathComponent(filename)
+        try safeRegularFile(url, in: recordingsDirectory)
+        return url
+    }
+
+    func removeAudioFile(_ filename: String) throws {
+        try EchoValidation.filename(filename)
+        let url = recordingsDirectory.appendingPathComponent(filename)
+        let attributes: [FileAttributeKey: Any]
+        do { attributes = try fileManager.attributesOfItem(atPath: url.path) }
+        catch let error as NSError where error.domain == NSCocoaErrorDomain && (error.code == NSFileNoSuchFileError || error.code == NSFileReadNoSuchFileError) { return }
+        guard attributes[.type] as? FileAttributeType == .typeRegular else { throw EchoStoreError.unsafeFile }
+        try safeRegularFile(url, in: recordingsDirectory)
+        try fileManager.removeItem(at: url)
+    }
+
+    private static func intValue(_ value: Any?) -> Int? {
+        if let value = value as? Int { return value }
+        if let number = value as? NSNumber { return number.intValue }
+        return nil
     }
 
     private func confirmedIndex(_ id: UUID) throws -> Int {
@@ -290,7 +604,7 @@ public final class EchoStore: ObservableObject {
     }
 
     private func cleanOrphanRecordings() throws {
-        let referenced = Set(snapshot.clips.map { $0.filename.lowercased() })
+        let referenced = Set(snapshot.referencedAudioFilenames.map { $0.lowercased() })
         try rejectSymlinkComponents(recordingsDirectory)
         for url in try fileManager.contentsOfDirectory(at: recordingsDirectory, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey]) {
             let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])

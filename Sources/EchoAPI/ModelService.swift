@@ -10,6 +10,7 @@ import Combine
         }
     }
     @Published public private(set) var wifiAvailable: Bool
+    @Published public private(set) var networkReachable: Bool
     @Published public private(set) var isBusy = false
     @Published public private(set) var requestsToday = 0
     @Published public private(set) var lastUsage = ""
@@ -25,17 +26,20 @@ import Combine
 
     public convenience init(defaults: UserDefaults = .standard, keychainService: String = "com.henrypann.echo101.models") {
         self.init(defaults: defaults, credentials: KeychainModelCredentialStore(service: keychainService),
-                  network: WiFiMonitor(), transport: SessionModelTransport(), now: Date.init)
+                  network: WiFiMonitor(), transport: SessionModelTransport(configuration: SessionModelTransport.familyConfiguration()), now: Date.init)
     }
     init(defaults: UserDefaults, credentials: any ModelCredentialStore, network: any WiFiMonitoring,
          transport: any ModelTransport, now: @escaping () -> Date = Date.init) {
         self.defaults = defaults; self.credentials = credentials; self.network = network; self.transport = transport; self.now = now
         configuration = defaults.data(forKey: Self.configurationKey).flatMap { try? JSONDecoder().decode(ModelConfiguration.self, from: $0) } ?? ModelConfiguration()
         wifiAvailable = network.available
+        networkReachable = network.reachable
         refreshQuota()
         network.start { [weak self] available in
-            self?.wifiAvailable = available
-            if !available { self?.cancel() }
+            guard let self else { return }
+            self.wifiAvailable = available
+            self.networkReachable = self.network.reachable
+            if !self.networkAllowsRequests { self.cancel() }
         }
     }
     deinit { active?.task.cancel() }
@@ -83,14 +87,14 @@ import Combine
     private func perform(scene: String, test: Bool) async throws -> ModelCodec.Parsed {
         guard !isBusy else { throw ModelServiceError.busy }
         guard configuration.enabled else { throw ModelServiceError.disabled }
-        guard wifiAvailable && network.available else { throw ModelServiceError.wifiRequired }
+        guard networkAllowsRequests else { throw ModelServiceError.wifiRequired }
         guard !configuration.modelID.isEmpty, configuration.modelID.count <= 100,
               configuration.modelID.unicodeScalars.allSatisfy({ CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.").contains($0) }) else {
             throw ModelServiceError.invalidInput
         }
         guard let key = try credentials.key(for: configuration.provider), !key.isEmpty else { throw ModelServiceError.missingKey }
         let snapshot = configuration
-        let request = try ModelCodec.request(configuration: snapshot, key: key, scene: scene, test: test)
+        let request = try ModelCodec.request(configuration: snapshot, key: key, scene: scene, test: test, allowsCellular: snapshot.allowsCellular)
         guard !Task.isCancelled else { throw ModelServiceError.cancelled }
         refreshQuota()
         guard requestsToday < 20 else { throw ModelServiceError.quotaExceeded }
@@ -111,7 +115,7 @@ import Combine
                 Task { @MainActor in self?.cancel(id: id) }
             }
             guard active?.id == id, !task.isCancelled, !Task.isCancelled, configuration == snapshot,
-                  wifiAvailable && network.available else { throw ModelServiceError.cancelled }
+                  networkAllowsRequests else { throw ModelServiceError.cancelled }
             guard response.url == snapshot.provider.endpoint else { throw ModelServiceError.networkFailure }
             guard response.status == 200 else { throw ModelServiceError.httpStatus(response.status) }
             return try ModelCodec.parseEnvelope(response.data)
@@ -125,6 +129,11 @@ import Combine
             throw ModelServiceError.networkFailure
         }
     }
+    private var networkAllowsRequests: Bool {
+        if configuration.allowsCellular { return networkReachable || wifiAvailable || network.reachable || network.available }
+        return wifiAvailable && network.available
+    }
+
     private func day() -> String {
         let parts = Calendar.current.dateComponents([.year, .month, .day], from: now())
         return "\(parts.year ?? 0)-\(parts.month ?? 0)-\(parts.day ?? 0)"

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import EchoCore
 
 enum EchoStyle {
@@ -30,178 +31,285 @@ enum EchoStyle {
     static let brandLavender = Color("EchoBrandLavender")
     static let brandYellow = Color("EchoBrandYellow")
     static let brandMint = Color("EchoBrandMint")
-    static let cream = background
-    static let ink = text
-    static let muted = textSecondary
-    static let teal = success
-    static let violet = focus
-    static let coral = accentText
+}
 
-    static func sceneAsset(_ scene: String) -> String {
-        switch scene {
-        case "Food": "scene-food"
-        case "Getting Ready", "Get ready": "scene-ready"
-        case "Bedtime": "scene-bedtime"
-        default: "scene-toys"
+struct GrandparentButtonStyle: ButtonStyle {
+    var filled = true
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 24, weight: .semibold))
+            .foregroundStyle(filled ? Color.white : EchoStyle.text)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, minHeight: 64)
+            .background(filled ? EchoStyle.action : Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(filled ? Color.clear : Color(white: 0.8), lineWidth: 1))
+            .opacity(configuration.isPressed ? 0.85 : 1)
+    }
+}
+
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 320
+        var x: CGFloat = 0, y: CGFloat = 0, row: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > width, x > 0 { x = 0; y += row + spacing; row = 0 }
+            x += size.width + spacing
+            row = max(row, size.height)
+        }
+        return CGSize(width: width, height: y + row)
+    }
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, row: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > bounds.maxX, x > bounds.minX { x = bounds.minX; y += row + spacing; row = 0 }
+            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(width: size.width, height: size.height))
+            x += size.width + spacing
+            row = max(row, size.height)
         }
     }
-    static func sceneColor(_ scene: String) -> Color {
-        switch scene {
-        case "Food": brandYellow
-        case "Getting Ready", "Get ready": brandMint
-        case "Bedtime": brandLavender
-        default: brandPeach
-        }
-    }
-    static func sceneTitle(_ scene: String) -> String { scene == "Getting Ready" ? "Get ready" : scene }
 }
 
-struct EchoCard: ViewModifier {
-    var color = EchoStyle.surface
-    func body(content: Content) -> some View {
-        content.padding(20)
-            .background {
-                RoundedRectangle(cornerRadius: 28, style: .continuous).fill(color)
-                    .shadow(color: EchoStyle.border.opacity(0.55), radius: 0, x: 0, y: 5)
-            }
-    }
-}
-extension View {
-    func echoCard(color: Color = EchoStyle.surface) -> some View { modifier(EchoCard(color: color)) }
-}
-
-struct EchoActionStyle: ButtonStyle {
-    var primary = true
-    var child = false
-    @Environment(\.isEnabled) private var isEnabled
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label.font(.system(.headline, design: .rounded, weight: .bold))
-            .multilineTextAlignment(.center)
-            .foregroundStyle(isEnabled ? (primary ? EchoStyle.onAction : EchoStyle.text) : EchoStyle.onDisabled)
-            .padding(.horizontal, 20).padding(.vertical, 16)
-            .frame(maxWidth: .infinity, minHeight: child ? 64 : 56)
-            .background(isEnabled ? (primary ? EchoStyle.action : EchoStyle.surface) : EchoStyle.disabled,
-                        in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(primary || !isEnabled ? Color.clear : EchoStyle.controlBorder, lineWidth: 1.5))
-            .opacity(configuration.isPressed ? 0.8 : 1)
-    }
-}
-
-struct EchoCoralStyle: ButtonStyle {
-    var child = false
-    @Environment(\.isEnabled) private var isEnabled
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label.font(.system(.headline, design: .rounded, weight: .bold))
-            .multilineTextAlignment(.center)
-            .foregroundStyle(isEnabled ? EchoStyle.onAccent : EchoStyle.onDisabled)
-            .padding(.horizontal, 20).padding(.vertical, 16)
-            .frame(maxWidth: .infinity, minHeight: child ? 64 : 56)
-            .background(isEnabled ? EchoStyle.accent : EchoStyle.disabled,
-                        in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .opacity(configuration.isPressed ? 0.8 : 1)
-    }
-}
-
-struct EchoBrandHeader: View {
-    var parent = false
-    @EnvironmentObject private var model: AppModel
-    @Environment(\.dynamicTypeSize) private var dynamicType
+struct TappableEnglish: View {
+    var text: String
+    var size: CGFloat
+    var weight: Font.Weight = .bold
+    var ipa: String? = nil
+    @EnvironmentObject private var audio: AudioController
     var body: some View {
-        HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Image("echo-logo").resizable().scaledToFit().frame(width: 160, height: 44).accessibilityLabel("Echo")
-                    if parent && !dynamicType.isAccessibilitySize {
-                        Text("/ parents").font(.caption.weight(.bold)).foregroundStyle(EchoStyle.text)
+        let tokens = AudioController.wordTokens(text)
+        FlowLayout(spacing: 8) {
+            ForEach(Array(tokens.enumerated()), id: \.offset) { index, token in
+                let highlighted = audio.activeSpeechText == text && audio.activeWordIndex == index
+                Button {
+                    audio.speakWord(token, ipa: tokens.count == 1 ? ipa : nil)
+                } label: {
+                    Text(token)
+                        .font(.system(size: size, weight: highlighted ? .bold : weight))
+                        .foregroundStyle(highlighted ? EchoStyle.accent : Color.black)
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+struct EchoTabBar: View {
+    @Binding var tab: Int
+    private let items: [(String, String)] = [
+        ("说一句", "mic.fill"),
+        ("单词", "square.grid.2x2.fill"),
+        ("今天", "calendar"),
+        ("爸妈", "person.2.fill")
+    ]
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                let selected = tab == index
+                Button {
+                    tab = index
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: item.1).font(.system(size: 28))
+                        Text(item.0).font(.system(size: 20, weight: selected ? .bold : .semibold))
                     }
+                    .foregroundStyle(selected ? EchoStyle.accent : EchoStyle.textSecondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                if parent && dynamicType.isAccessibilitySize {
-                    Text("/ parents").font(.caption.weight(.bold)).foregroundStyle(EchoStyle.text)
-                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(item.0)
+                .accessibilityIdentifier(item.0)
+                .accessibilityAddTraits(selected ? .isSelected : AccessibilityTraits())
             }
-            Spacer(minLength: 8)
-            Button {
-                if parent { model.leaveParentArea() }
-                else { Task { await model.requestParentAccess() } }
-            } label: {
-                Group {
-                    if model.isAuthenticatingParent { ProgressView() }
-                    else { Image(systemName: parent ? "xmark" : "lock") }
-                }.font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(EchoStyle.text).frame(width: 56, height: 56)
-                    .background(EchoStyle.surface, in: RoundedRectangle(cornerRadius: 18))
-            }.buttonStyle(.plain).disabled(model.isAuthenticatingParent)
-                .accessibilityLabel(parent ? "Return to child area" : "Open parent area; adult verification required")
-                .accessibilityIdentifier(parent ? "leaveParentArea" : "parentGate")
+        }
+        .frame(height: 84)
+        .background(Color.white)
+        .overlay(alignment: .top) { Rectangle().fill(Color(white: 0.88)).frame(height: 1) }
+    }
+}
+
+struct HoldToEnterButton: View {
+    var action: () -> Void
+    var body: some View {
+        HoldToEnterControl(action: action)
+            .frame(width: 240, height: 240)
+            .accessibilityElement(children: .contain)
+    }
+}
+
+/// UIKit hold control. SwiftUI long-press resets when the progress ring redraws, so the ring lives here.
+private struct HoldToEnterControl: UIViewRepresentable {
+    var action: () -> Void
+    func makeUIView(context: Context) -> HoldRingView {
+        let view = HoldRingView()
+        view.onComplete = action
+        return view
+    }
+    func updateUIView(_ uiView: HoldRingView, context: Context) {
+        uiView.onComplete = action
+    }
+}
+
+final class HoldRingView: UIView {
+    var onComplete: (() -> Void)?
+    private let track = CAShapeLayer()
+    private let ring = CAShapeLayer()
+    private let label = UILabel()
+    private let ticker = DisplayLinkBox()
+    private var startedAt: CFTimeInterval = 0
+    private var completed = false
+    private let holdDuration: CFTimeInterval = 3
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isAccessibilityElement = true
+        accessibilityLabel = "按住 3 秒进入"
+        accessibilityIdentifier = "parentGate"
+        accessibilityTraits = .button
+        backgroundColor = .white
+        track.fillColor = UIColor.clear.cgColor
+        track.strokeColor = (UIColor(named: "EchoTextSecondary") ?? .secondaryLabel).withAlphaComponent(0.25).cgColor
+        track.lineWidth = 10
+        ring.fillColor = UIColor.clear.cgColor
+        ring.strokeColor = (UIColor(named: "EchoAccent") ?? .systemBlue).cgColor
+        ring.lineWidth = 10
+        ring.lineCap = .butt
+        ring.strokeEnd = 0
+        layer.addSublayer(track)
+        layer.addSublayer(ring)
+        label.text = "按住 3 秒进入"
+        label.font = .systemFont(ofSize: 24, weight: .semibold)
+        label.textColor = .black
+        label.textAlignment = .center
+        label.numberOfLines = 2
+        label.isAccessibilityElement = false
+        addSubview(label)
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    deinit { ticker.invalidate() }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let side = min(bounds.width, bounds.height)
+        let line = track.lineWidth
+        let radius = side / 2 - line / 2 - 1
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        let path = UIBezierPath(arcCenter: center, radius: radius, startAngle: -CGFloat.pi / 2, endAngle: CGFloat.pi * 1.5, clockwise: true)
+        track.path = path.cgPath
+        ring.path = path.cgPath
+        ring.frame = bounds
+        track.frame = bounds
+        label.frame = bounds.insetBy(dx: 36, dy: 36)
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        guard !completed else { return }
+        startedAt = CACurrentMediaTime()
+        ring.strokeEnd = 0
+        ticker.invalidate()
+        let link = CADisplayLink(target: self, selector: #selector(tick))
+        link.add(to: .main, forMode: .common)
+        ticker.link = link
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+        let elapsed = CACurrentMediaTime() - startedAt
+        if !completed, startedAt > 0, elapsed >= holdDuration { finish() }
+        else { cancelIfNeeded() }
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        cancelIfNeeded()
+    }
+
+    private func cancelIfNeeded() {
+        guard !completed else { return }
+        ticker.invalidate()
+        ring.strokeEnd = 0
+    }
+
+    @objc private func tick() {
+        let elapsed = CACurrentMediaTime() - startedAt
+        ring.strokeEnd = min(1, CGFloat(elapsed / holdDuration))
+        guard elapsed >= holdDuration else { return }
+        finish()
+    }
+
+    private func finish() {
+        guard !completed else { return }
+        completed = true
+        ticker.invalidate()
+        ring.strokeEnd = 1
+        onComplete?()
+    }
+}
+
+/// CADisplayLink is not Sendable, and a UIView deinit cannot touch it directly.
+private final class DisplayLinkBox: @unchecked Sendable {
+    var link: CADisplayLink?
+    func invalidate() {
+        link?.invalidate()
+        link = nil
+    }
+}
+
+struct RecordButton: View {
+    var listening: Bool
+    var title: String
+    var action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var breathe = false
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(Color.white)
+                .multilineTextAlignment(.center)
+                .padding(12)
+                .frame(width: 200, height: 200)
+                .background(Circle().fill(listening ? EchoStyle.danger : EchoStyle.action))
+                .scaleEffect(!listening && breathe && !reduceMotion ? 1.045 : 1)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("recordButton")
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { breathe = true }
         }
     }
 }
 
-struct EchoMark: View {
+struct SavedStar: View {
+    @State private var visible = false
     var body: some View {
-        Image("echo-mark").resizable().scaledToFit().frame(width: 44, height: 44).accessibilityHidden(true)
-    }
-}
-struct SceneBadge: View {
-    let scene: String
-    var body: some View {
-        Text(EchoStyle.sceneTitle(scene)).font(.system(.caption, design: .rounded, weight: .bold))
-            .foregroundStyle(EchoStyle.accentText).padding(.horizontal, 12).padding(.vertical, 6)
-            .background(EchoStyle.accentSoft, in: Capsule())
-    }
-}
-struct ExpressionRow: View {
-    var expression: Expression
-    var scene: String
-    @Environment(\.dynamicTypeSize) private var dynamicType
-    var body: some View {
-        let layout = dynamicType.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 12))
-        layout {
-            Image(EchoStyle.sceneAsset(scene)).resizable().scaledToFit().frame(width: 64, height: 56).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 6) {
-                Text(expression.text).font(.system(.headline, design: .rounded, weight: .bold)).foregroundStyle(EchoStyle.text)
-                if !expression.meaning.isEmpty { Text(expression.meaning).font(.subheadline).foregroundStyle(EchoStyle.textSecondary) }
-                Text(expression.isConfirmed ? EchoStyle.sceneTitle(scene) : "Draft · Adult review")
-                    .font(.caption).foregroundStyle(expression.isConfirmed ? EchoStyle.textSecondary : EchoStyle.accentText)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            if expression.isFavorite { Image(systemName: "heart.fill").foregroundStyle(EchoStyle.accentText).accessibilityLabel("Favourite") }
-        }.padding(.vertical, 8)
-    }
-}
-struct AudioNotice: View {
-    @EnvironmentObject var audio: AudioController
-    var body: some View {
-        if let message = audio.errorMessage {
-            Label(message, systemImage: "info.circle").font(.callout).foregroundStyle(EchoStyle.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: 8) {
+            Image(systemName: "star.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(EchoStyle.accent)
+            Text("录好了")
+                .font(.system(size: 28, weight: .semibold))
         }
+        .frame(maxWidth: .infinity, minHeight: 64)
+        .opacity(visible ? 1 : 0)
+        .onAppear { withAnimation(.easeIn(duration: 0.2)) { visible = true } }
     }
 }
-struct RecordingPanel: View {
-    @EnvironmentObject var audio: AudioController
-    var mode: RecordingMode
-    var locale = "zh-CN"
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if audio.isRecording {
-                Label("Recording · \(Int(audio.elapsed))s", systemImage: "mic.circle.fill").foregroundStyle(EchoStyle.danger).font(.headline)
-                Button { audio.stopRecording() } label: { Label("Stop Recording", systemImage: "stop.fill") }
-                    .buttonStyle(EchoActionStyle(child: mode == .practice)).accessibilityIdentifier("stopRecording")
-            } else if audio.phase == .transcribing {
-                ProgressView("Processing on this iPhone…")
-                Button("Cancel Processing") { audio.interrupt() }.buttonStyle(EchoActionStyle(primary: false))
-            } else if let url = audio.temporaryRecordingURL {
-                Button { audio.playRecording(url: url) } label: { Label("Listen to Our Voice", systemImage: "play.fill") }.buttonStyle(EchoActionStyle())
-                Button("Discard Recording", role: .destructive) { audio.discardTemporaryRecording() }.buttonStyle(EchoActionStyle(primary: false))
-            } else {
-                Button { Task { await audio.startRecording(mode: mode, localeIdentifier: locale) } } label: {
-                    Label(mode == .context ? "Record a Short Moment" : "Start Recording", systemImage: "mic")
-                }.buttonStyle(EchoActionStyle(primary: false, child: mode == .practice)).accessibilityIdentifier("startRecording")
-            }
-            AudioNotice()
-            Text(mode == .context ? "Up to 45 seconds. Recording starts only when you tap. On-device transcription only; temporary audio is removed when you finish or cancel." : "Up to 30 seconds. Recording starts only when you tap. Listen together; there are no scores. Only Save Recording keeps the audio.")
-                .font(.callout).foregroundStyle(EchoStyle.textSecondary)
-        }
+
+struct ShareSheet: UIViewControllerRepresentable {
+    var url: URL
+    var onDone: () -> Void
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, _, _, _ in onDone() }
+        return controller
     }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

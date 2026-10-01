@@ -1,11 +1,18 @@
+import AudioToolbox
 import AVFoundation
 import Combine
 import Speech
 import UIKit
 
-enum SpeechMode: Sendable { case normal, slow, parts }
-enum RecordingMode: Sendable { case context, practice }
-enum AudioPhase: Sendable { case idle, speaking, recording, playingRecord, transcribing }
+struct SpeechPart: Sendable {
+    var text: String
+    var rate: Float
+    var ipa: String?
+}
+
+enum CaptureProblem: Equatable, Sendable {
+    case microphone, speech, mandarinAssets, failed
+}
 
 struct EchoVoice: Identifiable, Sendable {
     let id: String
@@ -14,7 +21,7 @@ struct EchoVoice: Identifiable, Sendable {
     let quality: String
 }
 
-/// Owns only unsaved recordings it creates inside the supplied temporary directory.
+/// One shared speech synthesizer for the whole app, so a tapped word can start within a moment.
 @MainActor
 final class AudioController: NSObject, ObservableObject {
     @Published var selectedVoiceID: String {
@@ -22,13 +29,15 @@ final class AudioController: NSObject, ObservableObject {
     }
     @Published private(set) var voices: [EchoVoice] = []
     @Published private(set) var phase: AudioPhase = .idle
-    @Published private(set) var isSpeechPaused = false
-    @Published private(set) var transcript = ""
-    @Published private(set) var temporaryRecordingURL: URL?
     @Published private(set) var elapsed: TimeInterval = 0
     @Published var errorMessage: String?
     @Published private(set) var onDeviceChinese = false
     @Published private(set) var onDeviceEnglish = false
+    @Published private(set) var isAwaitingSystemPermission = false
+    @Published private(set) var activeSpeechText = ""
+    @Published private(set) var activeWordIndex: Int?
+    @Published private(set) var recordingGeneration = 0
+    @Published private(set) var temporaryRecordingURL: URL?
 
     var isRecording: Bool { phase == .recording }
 
@@ -37,6 +46,7 @@ final class AudioController: NSObject, ObservableObject {
     private let defaults: UserDefaults
     private let synthesizer = AVSpeechSynthesizer()
     private let session = AVAudioSession.sharedInstance()
+    private let haptic = UIImpactFeedbackGenerator(style: .medium)
     private let observations = AudioNotificationObservations()
     private var recorder: AVAudioRecorder?
     private var player: AVAudioPlayer?
@@ -44,33 +54,32 @@ final class AudioController: NSObject, ObservableObject {
     private var recordingCallbacks: AudioDelegateCallbacks?
     private var playbackCallbacks: AudioDelegateCallbacks?
     private var recognitionTask: SFSpeechRecognitionTask?
-    private var activeRecognizer: SFSpeechRecognizer?
-    private var recognitionTimeout: Task<Void, Never>?
     private var elapsedTask: Task<Void, Never>?
     private var operationID = UUID()
-    private var utterances: [ObjectIdentifier: UUID] = [:]
+    private var utterances: [ObjectIdentifier: SpeechRegistration] = [:]
     private var ownedTemporaryURLs: Set<URL> = []
-    private var recordingMode: RecordingMode = .practice
-    private var recordingLocale = "zh-CN"
-    private var recordingLimit: TimeInterval = 30
-    private var contextCanTranscribe = false
+    private var recordingLimit: TimeInterval = 20
+    private var silenceSeconds: TimeInterval = 0
+    private var captureKind: CaptureKind = .grandparent
+    private let owner = AudioOwner()
 
     init(temporaryDirectory: URL, defaults: UserDefaults = .standard) {
         self.temporaryDirectory = temporaryDirectory.standardizedFileURL
         self.defaults = defaults
         self.selectedVoiceID = defaults.string(forKey: Self.voicePreferenceKey) ?? ""
         super.init()
+        owner.controller = self
+        haptic.prepare()
         refreshCapabilities()
         observeLifecycle()
+        prewarm()
     }
 
     func refreshCapabilities() {
         let installed = AVSpeechSynthesisVoice.speechVoices()
             .filter { $0.language == "en-US" }
             .sorted {
-                if $0.quality.rawValue != $1.quality.rawValue {
-                    return $0.quality.rawValue > $1.quality.rawValue
-                }
+                if $0.quality.rawValue != $1.quality.rawValue { return $0.quality.rawValue > $1.quality.rawValue }
                 return $0.name.localizedStandardCompare($1.name) == .orderedAscending
             }
         voices = installed.map {
@@ -91,147 +100,108 @@ final class AudioController: NSObject, ObservableObject {
         onDeviceEnglish = supportsOnDevice(locale: "en-US")
     }
 
-    func speak(text: String, segments: [String] = [], mode: SpeechMode = .normal) {
-        interrupt()
-        errorMessage = nil
-        let content = mode == .parts && !segments.isEmpty ? segments : [text]
-        let chunks = content.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-        guard !chunks.isEmpty else { return }
+    func prewarm() {
         refreshCapabilities()
-        guard let voice = AVSpeechSynthesisVoice(identifier: selectedVoiceID),
-              voice.language == "en-US", voices.contains(where: { $0.id == voice.identifier }) else {
-            errorMessage = "No installed US English voice is available. Add a voice in iPhone Settings and try again."
+        guard let voice = englishVoice() else { return }
+        let utterance = AVSpeechUtterance(string: "ok")
+        utterance.voice = voice
+        utterance.volume = 0
+        utterance.rate = AVSpeechUtteranceMaximumSpeechRate
+        synthesizer.speak(utterance)
+    }
+
+    func speakWord(_ text: String, ipa: String? = nil) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        speakParts([SpeechPart(text: trimmed, rate: AVSpeechUtteranceDefaultSpeechRate, ipa: ipa)])
+    }
+
+    func speakSentence(_ text: String, slowThenNormal: Bool) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        if slowThenNormal {
+            speakParts([
+                SpeechPart(text: trimmed, rate: 0.38, ipa: nil),
+                SpeechPart(text: trimmed, rate: AVSpeechUtteranceDefaultSpeechRate, ipa: nil)
+            ])
+        } else {
+            speakParts([SpeechPart(text: trimmed, rate: AVSpeechUtteranceDefaultSpeechRate, ipa: nil)])
+        }
+    }
+
+    func speakParts(_ parts: [SpeechPart]) {
+        interruptPlaybackOnly()
+        errorMessage = nil
+        activeSpeechText = ""
+        activeWordIndex = nil
+        let chunks = parts.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard !chunks.isEmpty else { return }
+        guard let voice = englishVoice() else {
+            errorMessage = "请让爸妈看看手机"
             return
         }
         do {
             try activatePlayback()
-            speechCallbacks = makeCallbacks(token: operationID)
+            let token = operationID
+            speechCallbacks = makeCallbacks(token: token)
             synthesizer.delegate = speechCallbacks
             phase = .speaking
-            for (index, chunk) in chunks.enumerated() {
-                let utterance = AVSpeechUtterance(string: chunk)
-                utterance.voice = voice
-                utterance.rate = mode == .slow ? 0.4 : AVSpeechUtteranceDefaultSpeechRate
-                utterance.pitchMultiplier = 1.0
-                utterance.postUtteranceDelay = mode == .parts && index < chunks.count - 1 ? 0.45 : 0
-                utterances[ObjectIdentifier(utterance)] = operationID
+            for part in chunks {
+                let utterance = makeUtterance(part, voice: voice)
+                utterances[ObjectIdentifier(utterance)] = SpeechRegistration(text: part.text, token: token)
                 synthesizer.speak(utterance)
             }
         } catch {
             phase = .idle
             deactivateSession()
-            errorMessage = "Speech playback could not start. Please try again."
+            errorMessage = "请让爸妈看看手机"
         }
     }
 
-    func startRecording(mode: RecordingMode, localeIdentifier: String = "zh-CN") async {
-        guard temporaryRecordingURL == nil else {
-            errorMessage = "Save or discard the current recording before starting another."
-            return
-        }
-        interrupt()
-        errorMessage = nil
-        let token = operationID
-        let allowed = await AVAudioApplication.requestRecordPermission()
-        guard operationID == token else {
-            if phase == .idle { errorMessage = "Permission check finished. Tap Record again when you are ready." }
-            return
-        }
-        guard allowed else {
-            errorMessage = "Microphone access is off. Enable it in Settings to record. You can still enter a note manually."
-            return
-        }
-        var canTranscribe = false
-        if mode == .context {
-            if supportsOnDevice(locale: localeIdentifier) {
-                let authorization = await speechAuthorization()
-                guard operationID == token else {
-                    if phase == .idle { errorMessage = "Permission check finished. Tap Record again when you are ready." }
-                    return
-                }
-                canTranscribe = authorization == .authorized
-                if !canTranscribe {
-                    errorMessage = "On-device transcription is not authorized. Your audio will be kept; enter a note manually."
-                }
-            } else {
-                errorMessage = "On-device transcription is unavailable for this language. Your audio will be kept; enter a note manually."
-            }
-        }
-        guard operationID == token, temporaryRecordingURL == nil else { return }
-        guard UIApplication.shared.applicationState == .active else {
-            errorMessage = "Return to the app and tap Record again."
-            return
-        }
-        var createdURL: URL?
+    func speakMandarin(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        interruptPlaybackOnly()
+        let utterance = AVSpeechUtterance(string: trimmed)
+        utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN")
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         do {
-            try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true,
-                attributes: [.protectionKey: FileProtectionType.complete])
-            try FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: temporaryDirectory.path)
-            let url = temporaryDirectory.appendingPathComponent("echo-\(UUID().uuidString).m4a")
-            guard FileManager.default.createFile(atPath: url.path, contents: Data(),
-                attributes: [.protectionKey: FileProtectionType.complete]) else {
-                throw AudioSetupError.fileCreation
-            }
-            createdURL = url
-            ownedTemporaryURLs.insert(url)
-            try protectTemporaryFile(url)
-            try session.setCategory(.record, mode: .default, options: [])
-            try session.setActive(true)
-            let nextRecorder = try AVAudioRecorder(url: url, settings: [
-                AVFormatIDKey: kAudioFormatMPEG4AAC,
-                AVSampleRateKey: 44_100,
-                AVNumberOfChannelsKey: 1,
-                AVEncoderBitRateKey: 96_000,
-                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-            ])
-            recordingCallbacks = makeCallbacks(token: token)
-            nextRecorder.delegate = recordingCallbacks
-            guard nextRecorder.prepareToRecord() else { throw AudioSetupError.recording }
-            try protectTemporaryFile(url)
-            recordingLimit = mode == .context ? 45 : 30
-            guard nextRecorder.record(forDuration: recordingLimit) else { throw AudioSetupError.recording }
-            recorder = nextRecorder
-            recordingMode = mode
-            recordingLocale = localeIdentifier
-            contextCanTranscribe = canTranscribe
-            transcript = ""
-            elapsed = 0
-            temporaryRecordingURL = url
-            phase = .recording
-            trackElapsed(token: token)
+            try activatePlayback()
+            let token = operationID
+            speechCallbacks = makeCallbacks(token: token)
+            synthesizer.delegate = speechCallbacks
+            phase = .speaking
+            utterances[ObjectIdentifier(utterance)] = SpeechRegistration(text: trimmed, token: token)
+            synthesizer.speak(utterance)
         } catch {
-            recorder?.stop()
-            recorder = nil
-            recordingCallbacks = nil
-            let removed = createdURL.map { removeOwnedTemporaryFile($0) } ?? true
-            if !removed { temporaryRecordingURL = createdURL }
-            deactivateSession()
             phase = .idle
-            errorMessage = removed
-                ? "Recording could not start. Check available storage and try again."
-                : "Recording could not start. Discard the temporary audio before trying again."
+            deactivateSession()
         }
     }
 
-    func pauseSpeech() {
-        guard phase == .speaking, !isSpeechPaused else { return }
-        if synthesizer.pauseSpeaking(at: .immediate) { isSpeechPaused = true }
+    func startGrandparentRecording() async -> CaptureProblem? {
+        captureKind = .grandparent
+        recordingLimit = 20
+        return await startCapture(needsSpeech: true)
     }
 
-    func resumeSpeech() {
-        guard phase == .speaking, isSpeechPaused else { return }
-        if synthesizer.continueSpeaking() { isSpeechPaused = false }
+    func startChildRecording() async -> CaptureProblem? {
+        captureKind = .child
+        recordingLimit = 10
+        return await startCapture(needsSpeech: false)
     }
 
     func stopRecording() {
-        finishRecording(transcribe: true)
+        guard phase == .recording else { return }
+        cue(starting: false)
+        finishRecording()
     }
 
     func playRecording(url: URL) {
-        interrupt()
+        interruptPlaybackOnly()
         errorMessage = nil
         guard url.isFileURL, FileManager.default.fileExists(atPath: url.path) else {
-            errorMessage = "This recording is no longer available."
+            errorMessage = "这段录音不在了"
             return
         }
         do {
@@ -249,132 +219,216 @@ final class AudioController: NSObject, ObservableObject {
             playbackCallbacks = nil
             phase = .idle
             deactivateSession()
-            errorMessage = "This recording could not be played. Please try again."
+            errorMessage = "这段录音放不了"
         }
-    }
-
-    func stopPlayback() {
-        guard phase == .speaking || phase == .playingRecord else { return }
-        interrupt()
     }
 
     func discardTemporaryRecording() {
-        interrupt()
-        if let url = temporaryRecordingURL {
-            guard removeOwnedTemporaryFile(url) else {
-                errorMessage = "The temporary recording could not be removed. Please try again."
-                return
-            }
-        }
+        if phase == .recording || phase == .speaking || phase == .playingRecord { interrupt() }
+        if let url = temporaryRecordingURL { _ = removeOwnedTemporaryFile(url) }
         temporaryRecordingURL = nil
-        transcript = ""
         elapsed = 0
     }
 
-    /// Lifecycle interruptions preserve the unsaved audio and never start transcription.
+    func transcribeCurrentMandarin() async -> String? {
+        guard let url = temporaryRecordingURL else { return nil }
+        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN")),
+              recognizer.supportsOnDeviceRecognition,
+              SFSpeechRecognizer.authorizationStatus() == .authorized else { return nil }
+        let request = SFSpeechURLRecognitionRequest(url: url)
+        request.requiresOnDeviceRecognition = true
+        request.shouldReportPartialResults = false
+        request.taskHint = .dictation
+        return await withCheckedContinuation { continuation in
+            let box = ContinuationBox(continuation)
+            let task = recognizer.recognitionTask(with: request) { result, error in
+                let finished = result?.isFinal == true || error != nil
+                guard finished else { return }
+                box.resume(result?.bestTranscription.formattedString)
+            }
+            recognitionTask = task
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(25))
+                if task.state == .running {
+                    task.cancel()
+                    box.resume(nil)
+                }
+            }
+        }
+    }
+
     func interrupt() {
-        isSpeechPaused = false
         operationID = UUID()
         recognitionTask?.cancel()
         recognitionTask = nil
-        activeRecognizer = nil
-        recognitionTimeout?.cancel()
-        recognitionTimeout = nil
         elapsedTask?.cancel()
         elapsedTask = nil
-        if let recorder {
-            if recorder.isRecording { elapsed = min(recordingLimit, recorder.currentTime) }
-            recorder.stop()
-        }
+        if let recorder, recorder.isRecording { recorder.stop() }
         recorder = nil
         recordingCallbacks = nil
         synthesizer.stopSpeaking(at: .immediate)
         synthesizer.delegate = nil
         speechCallbacks = nil
         utterances.removeAll()
-        if let player { elapsed = player.currentTime; player.stop() }
+        player?.stop()
         player = nil
         playbackCallbacks = nil
         phase = .idle
+        activeSpeechText = ""
+        activeWordIndex = nil
+        silenceSeconds = 0
         deactivateSession()
     }
 
-    private func finishRecording(transcribe: Bool) {
-        guard phase == .recording, let currentRecorder = recorder else { return }
-        if currentRecorder.isRecording { elapsed = min(recordingLimit, currentRecorder.currentTime) }
-        // Clear ownership before stop(), whose delegate callback can arrive later.
+    private func interruptPlaybackOnly() {
+        synthesizer.stopSpeaking(at: .immediate)
+        synthesizer.delegate = nil
+        speechCallbacks = nil
+        utterances.removeAll()
+        player?.stop()
+        player = nil
+        playbackCallbacks = nil
+        if phase == .speaking || phase == .playingRecord {
+            phase = .idle
+            deactivateSession()
+        }
+        activeSpeechText = ""
+        activeWordIndex = nil
+        operationID = UUID()
+    }
+
+    private func startCapture(needsSpeech: Bool) async -> CaptureProblem? {
+        discardTemporaryRecording()
+        errorMessage = nil
+        isAwaitingSystemPermission = true
+        let allowed = await AVAudioApplication.requestRecordPermission()
+        if needsSpeech {
+            _ = await speechAuthorization()
+        }
+        guard allowed else {
+            isAwaitingSystemPermission = false
+            return .microphone
+        }
+        if needsSpeech {
+            guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
+                isAwaitingSystemPermission = false
+                return .speech
+            }
+            guard supportsOnDevice(locale: "zh-CN") else {
+                isAwaitingSystemPermission = false
+                return .mandarinAssets
+            }
+        }
+        do {
+            try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true,
+                attributes: [.protectionKey: FileProtectionType.complete])
+            let url = temporaryDirectory.appendingPathComponent("echo-\(UUID().uuidString).m4a")
+            guard FileManager.default.createFile(atPath: url.path, contents: Data(),
+                attributes: [.protectionKey: FileProtectionType.complete]) else { throw AudioSetupError.fileCreation }
+            ownedTemporaryURLs.insert(url)
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+            try session.setActive(true)
+            let nextRecorder = try AVAudioRecorder(url: url, settings: [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: 16_000,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderBitRateKey: 64_000,
+                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+            ])
+            nextRecorder.isMeteringEnabled = true
+            recordingCallbacks = makeCallbacks(token: operationID)
+            nextRecorder.delegate = recordingCallbacks
+            guard nextRecorder.prepareToRecord(), nextRecorder.record(forDuration: recordingLimit) else { throw AudioSetupError.recording }
+            recorder = nextRecorder
+            temporaryRecordingURL = url
+            elapsed = 0
+            silenceSeconds = 0
+            phase = .recording
+            cue(starting: true)
+            trackElapsed(token: operationID)
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(400))
+                self.isAwaitingSystemPermission = false
+            }
+            return nil
+        } catch {
+            isAwaitingSystemPermission = false
+            discardTemporaryRecording()
+            return .failed
+        }
+    }
+
+    private func finishRecording() {
+        guard let current = recorder else {
+            phase = .idle
+            return
+        }
         recorder = nil
-        currentRecorder.stop()
+        if current.isRecording { current.stop() }
         recordingCallbacks = nil
         elapsedTask?.cancel()
         elapsedTask = nil
+        silenceSeconds = 0
         phase = .idle
         deactivateSession()
-        if transcribe, recordingMode == .context, contextCanTranscribe, let url = temporaryRecordingURL {
-            transcribeContext(url: url, token: operationID)
-        }
-    }
-
-    private func transcribeContext(url: URL, token: UUID) {
-        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: recordingLocale)),
-              recognizer.supportsOnDeviceRecognition,
-              SFSpeechRecognizer.authorizationStatus() == .authorized else {
-            errorMessage = "On-device transcription is unavailable. Your audio is kept; enter a note manually."
-            return
-        }
-        let request = SFSpeechURLRecognitionRequest(url: url)
-        request.requiresOnDeviceRecognition = true
-        request.shouldReportPartialResults = false
-        request.taskHint = .dictation
-        activeRecognizer = recognizer
-        phase = .transcribing
-        recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
-            let text = result?.bestTranscription.formattedString
-            let isFinal = result?.isFinal ?? false
-            let failed = error != nil
-            Task { @MainActor [weak self] in
-                guard let self, self.operationID == token, self.phase == .transcribing,
-                      self.temporaryRecordingURL == url else { return }
-                if isFinal, let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    self.transcript = text
-                    self.finishTranscription()
-                } else if failed || isFinal {
-                    self.finishTranscription()
-                    self.errorMessage = "On-device transcription could not finish. Your audio is kept; enter a note manually."
-                }
-            }
-        }
-        recognitionTimeout = Task { @MainActor [weak self] in
-            do { try await Task.sleep(for: .seconds(60)) } catch { return }
-            guard let self, self.operationID == token, self.phase == .transcribing else { return }
-            self.finishTranscription()
-            self.errorMessage = "On-device transcription timed out. Your audio is kept; enter a note manually."
-        }
-    }
-
-    private func finishTranscription() {
-        recognitionTask?.cancel()
-        recognitionTask = nil
-        activeRecognizer = nil
-        recognitionTimeout?.cancel()
-        recognitionTimeout = nil
-        phase = .idle
+        recordingGeneration += 1
     }
 
     private func trackElapsed(token: UUID) {
         elapsedTask?.cancel()
         elapsedTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
-                do { try await Task.sleep(for: .milliseconds(100)) } catch { return }
-                guard let self, self.operationID == token else { return }
-                if self.phase == .recording, let recorder = self.recorder {
-                    self.elapsed = min(self.recordingLimit, recorder.currentTime)
-                    if self.elapsed >= self.recordingLimit { self.stopRecording(); return }
-                } else if self.phase == .playingRecord, let player = self.player {
-                    self.elapsed = player.currentTime
-                } else { return }
+                try? await Task.sleep(for: .milliseconds(200))
+                guard let self, self.operationID == token, self.phase == .recording, let recorder = self.recorder else { return }
+                self.elapsed = min(self.recordingLimit, recorder.currentTime)
+                if self.captureKind == .grandparent {
+                    recorder.updateMeters()
+                    let power = recorder.averagePower(forChannel: 0)
+                    if self.elapsed > 0.6 && power < -42 {
+                        self.silenceSeconds += 0.2
+                    } else {
+                        self.silenceSeconds = 0
+                    }
+                    if self.silenceSeconds >= 3 || self.elapsed >= self.recordingLimit {
+                        self.cue(starting: false)
+                        self.finishRecording()
+                        return
+                    }
+                } else if self.elapsed >= self.recordingLimit {
+                    self.cue(starting: false)
+                    self.finishRecording()
+                    return
+                }
             }
         }
+    }
+
+    private func cue(starting: Bool) {
+        haptic.impactOccurred()
+        haptic.prepare()
+        AudioServicesPlaySystemSound(starting ? 1113 : 1114)
+    }
+
+    private func englishVoice() -> AVSpeechSynthesisVoice? {
+        guard let voice = AVSpeechSynthesisVoice(identifier: selectedVoiceID), voice.language.hasPrefix("en") else {
+            return AVSpeechSynthesisVoice(language: "en-US")
+        }
+        return voice
+    }
+
+    private func makeUtterance(_ part: SpeechPart, voice: AVSpeechSynthesisVoice) -> AVSpeechUtterance {
+        let utterance: AVSpeechUtterance
+        if let ipa = part.ipa?.trimmingCharacters(in: .whitespacesAndNewlines), !ipa.isEmpty {
+            let attributed = NSMutableAttributedString(string: part.text)
+            let range = NSRange(location: 0, length: (part.text as NSString).length)
+            attributed.addAttribute(NSAttributedString.Key(AVSpeechSynthesisIPANotationAttribute), value: ipa, range: range)
+            utterance = AVSpeechUtterance(attributedString: attributed)
+        } else {
+            utterance = AVSpeechUtterance(string: part.text)
+        }
+        utterance.voice = voice
+        utterance.rate = part.rate
+        return utterance
     }
 
     private func supportsOnDevice(locale: String) -> Bool {
@@ -385,7 +439,8 @@ final class AudioController: NSObject, ObservableObject {
         let status = SFSpeechRecognizer.authorizationStatus()
         guard status == .notDetermined else { return status }
         return await withCheckedContinuation { continuation in
-            SFSpeechRecognizer.requestAuthorization { status in continuation.resume(returning: status) }
+            let box = AuthorizationBox(continuation)
+            SFSpeechRecognizer.requestAuthorization { status in box.resume(status) }
         }
     }
 
@@ -396,14 +451,6 @@ final class AudioController: NSObject, ObservableObject {
 
     private func deactivateSession() {
         try? session.setActive(false, options: .notifyOthersOnDeactivation)
-    }
-
-    private func protectTemporaryFile(_ url: URL) throws {
-        try FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: url.path)
-        var securedURL = url
-        var values = URLResourceValues()
-        values.isExcludedFromBackup = true
-        try securedURL.setResourceValues(values)
     }
 
     @discardableResult
@@ -418,59 +465,84 @@ final class AudioController: NSObject, ObservableObject {
     }
 
     private func observeLifecycle() {
+        let owner = self.owner
         for name in [UIApplication.willResignActiveNotification, UIApplication.didEnterBackgroundNotification,
                      UIScene.willDeactivateNotification, AVAudioSession.mediaServicesWereResetNotification] {
-            observations.tokens.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    guard let self, self.phase != .idle else { return }
-                    self.interrupt()
+            observations.tokens.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
+                Task { @MainActor in
+                    guard let self = owner.controller, !self.isAwaitingSystemPermission else { return }
+                    if self.phase != .idle { self.interrupt() }
                 }
             })
         }
         observations.tokens.append(NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification,
-            object: session, queue: .main) { [weak self] notification in
+            object: session, queue: .main) { notification in
                 let type = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
                 guard type == AVAudioSession.InterruptionType.began.rawValue else { return }
-                Task { @MainActor [weak self] in self?.interrupt() }
-            })
-        observations.tokens.append(NotificationCenter.default.addObserver(forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification,
-            object: nil, queue: .main) { [weak self] _ in
-                Task { @MainActor [weak self] in self?.refreshCapabilities() }
+                Task { @MainActor in
+                    guard let self = owner.controller, !self.isAwaitingSystemPermission else { return }
+                    self.interrupt()
+                }
             })
     }
 
     private func speechFinished(id: ObjectIdentifier) {
-        guard let token = utterances.removeValue(forKey: id), token == operationID, phase == .speaking else { return }
+        guard let item = utterances.removeValue(forKey: id), item.token == operationID else { return }
         if utterances.isEmpty {
             phase = .idle
-            isSpeechPaused = false
+            activeSpeechText = ""
+            activeWordIndex = nil
             speechCallbacks = nil
             synthesizer.delegate = nil
             deactivateSession()
         }
     }
 
+    private func willSpeak(id: ObjectIdentifier, range: NSRange) {
+        guard let item = utterances[id], item.token == operationID else { return }
+        activeSpeechText = item.text
+        activeWordIndex = Self.wordIndex(in: item.text, range: range)
+    }
+
+    static func wordTokens(_ text: String) -> [String] {
+        text.split(whereSeparator: \.isWhitespace).map(String.init)
+    }
+
+    static func wordIndex(in text: String, range: NSRange) -> Int {
+        let ns = text as NSString
+        var location = 0
+        for (index, token) in wordTokens(text).enumerated() {
+            let found = ns.range(of: token, options: [], range: NSRange(location: location, length: max(0, ns.length - location)))
+            if found.location == NSNotFound { continue }
+            let end = found.location + found.length
+            if range.location < end && range.location + max(range.length, 1) > found.location { return index }
+            location = end
+        }
+        return 0
+    }
+
     private func recordingFinished(id: ObjectIdentifier, successfully: Bool) {
         guard let recorder, ObjectIdentifier(recorder) == id, phase == .recording else { return }
         if successfully { elapsed = recordingLimit }
-        finishRecording(transcribe: successfully)
-        if !successfully { errorMessage = "Recording was interrupted. Review the saved temporary audio or enter a note manually." }
+        cue(starting: false)
+        finishRecording()
     }
 
     private func playbackFinished(id: ObjectIdentifier, successfully: Bool) {
         guard let player, ObjectIdentifier(player) == id, phase == .playingRecord else { return }
-        let duration = player.duration
-        interrupt()
-        if successfully { elapsed = duration }
-        if !successfully { errorMessage = "Playback was interrupted. Please try again." }
+        interruptPlaybackOnly()
+        if !successfully { errorMessage = "这段录音放不了" }
     }
 
     private func makeCallbacks(token: UUID) -> AudioDelegateCallbacks {
-        AudioDelegateCallbacks { [weak self] event in
-            Task { @MainActor [weak self] in
-                guard let self, self.operationID == token else { return }
+        let owner = self.owner
+        return AudioDelegateCallbacks { event in
+            Task { @MainActor in
+                guard let self = owner.controller, self.operationID == token else { return }
                 switch event {
                 case .speechFinished(let id): self.speechFinished(id: id)
+                case .willSpeak(let id, let location, let length):
+                    self.willSpeak(id: id, range: NSRange(location: location, length: length))
                 case .recordingFinished(let id, let succeeded): self.recordingFinished(id: id, successfully: succeeded)
                 case .playbackFinished(let id, let succeeded): self.playbackFinished(id: id, successfully: succeeded)
                 }
@@ -479,49 +551,77 @@ final class AudioController: NSObject, ObservableObject {
     }
 }
 
+enum AudioPhase: Sendable { case idle, speaking, recording, playingRecord }
+
+private enum CaptureKind { case grandparent, child }
+
+private struct SpeechRegistration: Sendable {
+    var text: String
+    var token: UUID
+}
+
 private enum AudioDelegateEvent: Sendable {
     case speechFinished(ObjectIdentifier)
+    case willSpeak(ObjectIdentifier, Int, Int)
     case recordingFinished(ObjectIdentifier, Bool)
     case playbackFinished(ObjectIdentifier, Bool)
 }
 
-/// Immutable callback closure carries its operation token across arbitrary delegate queues.
 private final class AudioDelegateCallbacks: NSObject, AVSpeechSynthesizerDelegate, AVAudioRecorderDelegate, AVAudioPlayerDelegate, Sendable {
     private let handle: @Sendable (AudioDelegateEvent) -> Void
-
     init(handle: @escaping @Sendable (AudioDelegateEvent) -> Void) {
         self.handle = handle
         super.init()
     }
-
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         handle(.speechFinished(ObjectIdentifier(utterance)))
     }
-
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         handle(.speechFinished(ObjectIdentifier(utterance)))
     }
-
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
+        handle(.willSpeak(ObjectIdentifier(utterance), characterRange.location, characterRange.length))
+    }
     nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
         handle(.recordingFinished(ObjectIdentifier(recorder), flag))
     }
-
-    nonisolated func audioRecorderEncodeErrorDidOccur(_ recorder: AVAudioRecorder, error: (any Error)?) {
-        handle(.recordingFinished(ObjectIdentifier(recorder), false))
-    }
-
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         handle(.playbackFinished(ObjectIdentifier(player), flag))
-    }
-
-    nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Error)?) {
-        handle(.playbackFinished(ObjectIdentifier(player), false))
     }
 }
 
 private enum AudioSetupError: Error { case fileCreation, recording, playback }
 
-/// Observer removal is safe from deinit without accessing main-actor controller state.
+private final class AudioOwner: @unchecked Sendable {
+    weak var controller: AudioController?
+}
+
+private final class AuthorizationBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<SFSpeechRecognizerAuthorizationStatus, Never>?
+    init(_ continuation: CheckedContinuation<SFSpeechRecognizerAuthorizationStatus, Never>) { self.continuation = continuation }
+    func resume(_ value: SFSpeechRecognizerAuthorizationStatus) {
+        lock.lock()
+        let current = continuation
+        continuation = nil
+        lock.unlock()
+        current?.resume(returning: value)
+    }
+}
+
+private final class ContinuationBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<String?, Never>?
+    init(_ continuation: CheckedContinuation<String?, Never>) { self.continuation = continuation }
+    func resume(_ value: String?) {
+        lock.lock()
+        let current = continuation
+        continuation = nil
+        lock.unlock()
+        current?.resume(returning: value)
+    }
+}
+
 private final class AudioNotificationObservations: @unchecked Sendable {
     var tokens: [NSObjectProtocol] = []
     deinit { for token in tokens { NotificationCenter.default.removeObserver(token) } }

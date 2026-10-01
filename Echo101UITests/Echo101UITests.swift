@@ -3,122 +3,65 @@ import XCTest
 @MainActor
 final class Echo101UITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
-    private func app(run: String = UUID().uuidString, parent: Bool = true, seeded: Bool = false) -> XCUIApplication {
+
+    private func launch() -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--test-run-id", run]
-        if parent { app.launchArguments.append("--test-parent") }
-        if seeded { app.launchArguments.append("--seed-samples") }
+        app.launchArguments = ["--uitesting", "--test-run-id", UUID().uuidString]
+        app.launch()
         return app
     }
-    private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
-        for _ in 0..<8 {
-            if element.exists && element.isHittable { return }
-            app.swipeUp()
-        }
-    }
-    private func screenshot(_ name: String, _ app: XCUIApplication) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
-        attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
-    }
-    func testMomentExpressionPersistsAndCanBeDeleted() throws {
-        let run = UUID().uuidString
-        let app = app(run: run)
-        app.launch()
-        XCTAssertTrue(app.buttons["addMoment"].waitForExistence(timeout: 15))
-        screenshot("Home-empty", app)
-        reveal(app.buttons["addMoment"], in: app)
-        app.buttons["addMoment"].tap()
-        let note = app.descendants(matching: .any)["momentNote"].firstMatch
-        XCTAssertTrue(note.waitForExistence(timeout: 5))
-        note.tap(); note.typeText("A red toy car at home")
-        app.buttons["saveMoment"].tap()
-        let moment = app.staticTexts["A red toy car at home"].firstMatch
-        reveal(moment, in: app)
-        XCTAssertTrue(moment.waitForExistence(timeout: 5)); moment.tap()
-        reveal(app.buttons["addExpression"], in: app)
-        app.buttons["addExpression"].tap()
-        let english = app.descendants(matching: .any)["englishText"].firstMatch
-        XCTAssertTrue(english.waitForExistence(timeout: 5))
-        english.tap(); english.typeText("A red car.")
-        app.buttons["saveExpression"].tap()
-        let savedExpression = app.staticTexts["A red car."].firstMatch
-        XCTAssertTrue(savedExpression.waitForExistence(timeout: 10))
-        reveal(savedExpression, in: app)
-        savedExpression.tap()
-        XCTAssertTrue(app.buttons["playExpression"].waitForExistence(timeout: 5))
-        screenshot("Expression", app)
-        // Deliberately do not start microphones or change network/system settings.
-        app.terminate(); app.launch()
-        reveal(app.staticTexts["A red car."].firstMatch, in: app)
-        XCTAssertTrue(app.staticTexts["A red car."].firstMatch.waitForExistence(timeout: 10))
-        app.staticTexts["A red car."].firstMatch.tap()
-        reveal(app.buttons["Delete Expression"], in: app)
-        app.buttons["Delete Expression"].tap()
-        let confirmDelete = app.alerts.buttons["Delete"]
-        XCTAssertTrue(confirmDelete.waitForExistence(timeout: 5))
-        confirmDelete.tap()
-        // A successful tap is not proof that SwiftUI has finished dismissing.
-        let removed = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "exists == false"),
-            object: app.staticTexts["expressionTitle"]
-        )
-        XCTAssertEqual(XCTWaiter.wait(for: [removed], timeout: 10), .completed)
-        XCTAssertTrue(app.buttons["addMoment"].waitForExistence(timeout: 10))
-        screenshot("Expression-deleted", app)
-        // Verify durable deletion, not just a transient navigation change.
-        app.terminate(); app.launch()
-        XCTAssertTrue(app.buttons["addMoment"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.staticTexts["A red toy car at home"].firstMatch.waitForExistence(timeout: 10))
-        XCTAssertFalse(app.staticTexts["A red car."].firstMatch.exists)
-        screenshot("Deletion-persists-after-relaunch", app)
-        app.terminate()
-    }
-    func testSettingsDiagnosticsAndCloudOffByDefault() throws {
-        let app = app()
-        app.launch()
-        app.tabBars.buttons["Settings"].tap()
-        let microphone = app.buttons["microphoneSettings"].firstMatch
-        reveal(microphone, in: app)
-        XCTAssertTrue(microphone.waitForExistence(timeout: 5))
-        microphone.tap()
-        reveal(app.buttons["Refresh Voices & Capabilities"], in: app)
-        XCTAssertTrue(app.buttons["Refresh Voices & Capabilities"].waitForExistence(timeout: 5))
-        screenshot("Voice-diagnostics", app)
-        let summary = app.staticTexts.allElementsBoundByIndex.map(\.label)
-            .filter { $0.contains("recognition") || $0 == "Supported" || $0 == "Unavailable" }
-            .joined(separator: "\n")
-        let attachment = XCTAttachment(string: summary)
-        attachment.name = "Device-capability-labels"; attachment.lifetime = .keepAlways; add(attachment)
-        let enabled = app.switches["cloudGenerationToggle"]
-        reveal(enabled, in: app)
-        XCTAssertTrue(enabled.waitForExistence(timeout: 5))
-        XCTAssertEqual(enabled.value as? String, "0")
-        screenshot("Model-settings", app)
-        app.terminate()
-    }
-    func testCaptureCanBeCancelledWithoutStartingMicrophone() throws {
-        let app = app(); app.launch()
-        reveal(app.buttons["captureMoment"], in: app)
-        app.buttons["captureMoment"].tap()
-        XCTAssertTrue(app.buttons["startRecording"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["stopRecording"].exists)
-        screenshot("Capture-ready", app)
-        app.buttons["Cancel"].tap()
-        XCTAssertTrue(app.buttons["addMoment"].waitForExistence(timeout: 5))
+
+    func testDefaultTabIsSpeak() {
+        let app = launch()
+        let speak = app.buttons["说一句"]
+        XCTAssertTrue(speak.waitForExistence(timeout: 15))
+        XCTAssertTrue(speak.isSelected)
+        XCTAssertTrue(app.buttons["按一下，说中文"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["单词"].exists)
+        XCTAssertTrue(app.buttons["今天"].exists)
+        XCTAssertTrue(app.buttons["爸妈"].exists)
         app.terminate()
     }
 
-    func testChildScreensDoNotExposeDraftsOrParentNotes() throws {
-        let app = app(parent: false, seeded: true)
-        app.launch()
-        XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.tabBars.buttons["Settings"].exists)
-        XCTAssertFalse(app.staticTexts["今天一起玩红色小汽车，然后把它收进盒子。"].exists)
-        app.tabBars.buttons["Explore"].tap()
-        app.staticTexts["Toys"].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["A red car."].firstMatch.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["Put the car in the box."].exists)
-        screenshot("Child-explore-confirmed-only", app)
+    func testTodayTabShowsEmptyDay() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["今天"].waitForExistence(timeout: 15))
+        app.buttons["今天"].tap()
+        XCTAssertTrue(app.staticTexts["今天还没有说过"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["按一下，说中文"].exists)
+        app.terminate()
+    }
+
+    func testParentGateNeedsThreeSecondHoldAndRelocks() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["爸妈"].waitForExistence(timeout: 15))
+        app.buttons["爸妈"].tap()
+        XCTAssertTrue(app.staticTexts["这里是爸妈用的"].waitForExistence(timeout: 5))
+        let gate = app.buttons["parentGate"]
+        XCTAssertTrue(gate.waitForExistence(timeout: 5))
+        XCTAssertEqual(gate.label, "按住 3 秒进入")
+        XCTAssertFalse(app.staticTexts["晚间回看"].exists)
+        gate.press(forDuration: 4)
+        XCTAssertTrue(app.staticTexts["晚间回看"].waitForExistence(timeout: 5))
+        app.buttons["说一句"].tap()
+        app.buttons["爸妈"].tap()
+        XCTAssertTrue(app.staticTexts["这里是爸妈用的"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["晚间回看"].exists)
+        app.terminate()
+    }
+
+    func testWordsTabOpensPinnedCategoryAndWord() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["单词"].waitForExistence(timeout: 15))
+        app.buttons["单词"].tap()
+        XCTAssertTrue(app.staticTexts["常用单词"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["category-hangzhou"].exists)
+        app.buttons["category-fruit"].tap()
+        let apple = app.buttons["word-apple"]
+        XCTAssertTrue(apple.waitForExistence(timeout: 5))
+        apple.tap()
+        XCTAssertTrue(app.buttons["playWord"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["nextWord"].exists)
         app.terminate()
     }
 }

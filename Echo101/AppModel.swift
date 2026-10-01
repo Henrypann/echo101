@@ -1,38 +1,41 @@
+import AVFoundation
 import Foundation
 import Combine
-import UIKit
 import LocalAuthentication
+import SwiftUI
 import EchoCore
 import EchoAPI
 
-typealias Expression = EchoCore.Expression
+enum SpeakPhase: Equatable {
+    case waiting
+    case listening
+    case working
+    case result(UUID)
+    case notice(String)
+}
+
+enum FollowPhase: Equatable {
+    case idle
+    case replaying
+    case recording
+    case saved
+}
 
 @MainActor
 final class AppModel: ObservableObject {
     let store: EchoStore?
     let audio: AudioController?
     let api: ModelService
-    @Published var errorMessage: String?
-    @Published private(set) var isParentMode = false
-    @Published private(set) var isAuthenticatingParent = false
-    @Published var parentGateError: String?
-    @Published var parentTab = 0
-    @Published var childTab = 0
-    @Published var reminderVisible = false
-    @Published var reminderMinutes: Int {
-        didSet {
-            preferences.set(reminderMinutes, forKey: "echo.reminderMinutes")
-            startActivityReminder()
-        }
-    }
-    private let preferences: UserDefaults
-    private var parentAuthentication: LAContext?
-    private var gateToken = UUID()
-    private var reminderTask: Task<Void, Never>?
-    let snapshotPage: String?
-    let snapshotAppearance: String?
-    let snapshotLargeText: Bool
-    static let scenes = ["Everyday", "Toys", "Food", "Outdoors", "Songs", "Getting Ready", "Bedtime"]
+    let vocabulary: VocabularyCatalog
+    @Published var tab = 0
+    @Published var parentUnlocked = false
+    @Published var speakPhase: SpeakPhase = .waiting
+    @Published var followPhase: FollowPhase = .idle
+    @Published var statusLine: String?
+    @Published var keyUnlocked = false
+    @Published var backgroundedAt: Date?
+    private var resolvingCapture = false
+    private let isUITest: Bool
 
     init() {
         let defaults: UserDefaults
@@ -40,178 +43,319 @@ final class AppModel: ObservableObject {
         let directoryName: String
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
-        let isTest = args.contains("--uitesting")
-        func value(after flag: String) -> String? {
-            guard let i = args.firstIndex(of: flag), args.indices.contains(i + 1) else { return nil }
-            return args[i + 1]
-        }
-        snapshotPage = isTest ? value(after: "--snapshot-page") : nil
-        snapshotAppearance = isTest ? value(after: "--appearance") : nil
-        snapshotLargeText = isTest && args.contains("--large-text")
-        let runID: UUID = args.firstIndex(of: "--test-run-id").flatMap { i in
-            args.indices.contains(i + 1) ? UUID(uuidString: args[i + 1]) : nil
+        isUITest = args.contains("--uitesting")
+        let runID: UUID = args.firstIndex(of: "--test-run-id").flatMap { index in
+            args.indices.contains(index + 1) ? UUID(uuidString: args[index + 1]) : nil
         } ?? UUID()
-        defaults = isTest ? UserDefaults(suiteName: "echo101.tests.\(runID.uuidString)")! : .standard
-        keychainService = isTest ? "echo101.tests.\(runID.uuidString)" : "com.henrypann.echo101.models"
-        directoryName = isTest ? "EchoTests-\(runID.uuidString)" : "EchoData"
+        defaults = isUITest ? UserDefaults(suiteName: "echo101.tests.\(runID.uuidString)")! : .standard
+        keychainService = isUITest ? "echo101.tests.\(runID.uuidString)" : "com.henrypann.echo101.models"
+        directoryName = isUITest ? "EchoTests-\(runID.uuidString)" : "EchoData"
         #else
-        snapshotPage = nil; snapshotAppearance = nil; snapshotLargeText = false
+        isUITest = false
         defaults = .standard
         keychainService = "com.henrypann.echo101.models"
         directoryName = "EchoData"
         #endif
-        preferences = defaults
-        let savedMinutes = defaults.object(forKey: "echo.reminderMinutes") as? Int ?? 5
-        reminderMinutes = [0, 3, 5, 10].contains(savedMinutes) ? savedMinutes : 5
+        vocabulary = (try? VocabularyCatalog.load()) ?? VocabularyCatalog(categories: [])
         api = ModelService(defaults: defaults, keychainService: keychainService)
         do {
             let support = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             let root = support.appendingPathComponent(directoryName, isDirectory: true)
             let loaded = try EchoStore(directory: root)
             store = loaded
-            let controller = AudioController(temporaryDirectory: loaded.temporaryDirectory, defaults: defaults)
-            audio = controller
+            audio = AudioController(temporaryDirectory: loaded.temporaryDirectory, defaults: defaults)
+            if !isUITest { try? loaded.installSeedPhrasesIfEmpty() }
+            api.configuration.allowsCellular = loaded.snapshot.allowCellular
             #if DEBUG
-            if isTest {
-                api.configuration.enabled = false
-                if args.contains("--seed-samples"), loaded.snapshot.isEmpty { try? seedPreviewLibrary(loaded) }
-                if args.contains("--test-parent") || ["overview", "moment", "review", "settings", "moments"].contains(snapshotPage ?? "") { isParentMode = true }
-                parentTab = snapshotPage == "settings" ? 2 : snapshotPage == "moments" ? 1 : 0
-                childTab = snapshotPage == "explore" ? 1 : snapshotPage == "world" ? 2 : 0
-                writeDiagnostics(store: loaded, audio: controller)
-            }
+            if isUITest { api.configuration.enabled = false }
             #endif
         } catch {
-            store = nil; audio = nil
-            errorMessage = "Echo could not open local storage. Existing files were not reset. Please close the app and try again."
+            store = nil
+            audio = nil
+            statusLine = "请让爸妈看看手机"
         }
     }
 
-    func perform(_ operation: () throws -> Void) {
-        do { try operation() } catch { errorMessage = error.localizedDescription }
+    var pendingCount: Int { store?.snapshot.records.filter(\.waitsForParent).count ?? 0 }
+
+    func handleScenePhase(_ phase: ScenePhase) {
+        switch phase {
+        case .background:
+            backgroundedAt = Date()
+            parentUnlocked = false
+            keyUnlocked = false
+            if audio?.isAwaitingSystemPermission != true {
+                audio?.interrupt()
+            }
+            api.cancel()
+            try? store?.flushUsage()
+        case .inactive:
+            if audio?.isAwaitingSystemPermission != true {
+                audio?.interrupt()
+            }
+        case .active:
+            if let start = backgroundedAt, Date().timeIntervalSince(start) > 10 * 60 {
+                tab = 0
+                speakPhase = .waiting
+            }
+            backgroundedAt = nil
+        @unknown default:
+            break
+        }
     }
 
-    func requestParentAccess() async {
-        guard !isAuthenticatingParent, !isParentMode else { return }
-        parentGateError = nil
-        let context = LAContext()
-        var capabilityError: NSError?
-        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &capabilityError) else {
-            parentGateError = "Set a device passcode in iPhone Settings to open the parent area. Saved words are still available here."
+    func lockParentIfNeeded(from oldTab: Int, to newTab: Int) {
+        if oldTab == 3 && newTab != 3 {
+            parentUnlocked = false
+            keyUnlocked = false
+        }
+    }
+
+    func toggleRecording() async {
+        guard let audio else { return }
+        if speakPhase == .listening {
+            audio.stopRecording()
+            await resolveCapture()
             return
         }
-        let token = UUID(); gateToken = token
-        parentAuthentication = context; isAuthenticatingParent = true
-        do {
-            // Keep LAContext on the main actor. Older SDKs' async bridge moves a
-            // non-Sendable context across executors; the callback API does not.
-            let granted: Bool = try await withCheckedThrowingContinuation { continuation in
-                context.evaluatePolicy(.deviceOwnerAuthentication,
-                    localizedReason: "Open Echo's parent area to manage family moments and privacy settings.") { granted, error in
-                    if let error { continuation.resume(throwing: error) }
-                    else { continuation.resume(returning: granted) }
-                }
+        followPhase = .idle
+        audio.discardTemporaryRecording()
+        let problem = await audio.startGrandparentRecording()
+        if let problem {
+            await noteSetup(problem)
+            return
+        }
+        speakPhase = .listening
+    }
+
+    func recordingDidStop() async {
+        guard speakPhase == .listening, audio?.phase != .recording else { return }
+        await resolveCapture()
+    }
+
+    func followDidStop() async {
+        guard followPhase == .recording, audio?.phase != .recording, let audio, let store else { return }
+        guard let url = audio.temporaryRecordingURL, let recordID = currentRecordID else {
+            followPhase = .idle
+            return
+        }
+        if (try? store.attachChildAudio(recordID: recordID, temporaryURL: url)) != nil {
+            followPhase = .saved
+            if let wordID = followWordID { try? store.markWordRepeated(wordID) }
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1))
+                if followPhase == .saved { followPhase = .idle }
             }
-            guard gateToken == token else { return }
-            isAuthenticatingParent = false; parentAuthentication = nil
-            if granted { audio?.interrupt(); api.cancel(); stopActivityReminder(); parentTab = 0; isParentMode = true }
-        } catch {
-            guard gateToken == token else { return }
-            isAuthenticatingParent = false; parentAuthentication = nil
-            parentGateError = "The parent area stayed locked. Try again when an adult is ready."
+        } else {
+            followPhase = .idle
+            showNotice("请让爸妈看看手机")
         }
     }
 
-    func leaveParentArea() {
-        gateToken = UUID(); parentAuthentication?.invalidate(); parentAuthentication = nil
-        isAuthenticatingParent = false; parentGateError = nil; isParentMode = false
-        audio?.interrupt(); api.cancel(); stopActivityReminder()
+    private var currentRecordID: UUID? {
+        if case .result(let id) = speakPhase { return id }
+        return followRecordID
+    }
+    private var followRecordID: UUID?
+    private var followWordID: String?
+
+    func playEnglish(for record: SpokenRecord) {
+        let phrase = store?.snapshot.phrases.first { $0.id == record.phraseID }
+        let text = phrase?.speechText ?? record.english
+        guard !text.isEmpty else { return }
+        audio?.speakSentence(text, slowThenNormal: true)
     }
 
-    func startActivityReminder() {
-        stopActivityReminder()
-        guard !isParentMode, UIApplication.shared.applicationState == .active,
-              [3, 5, 10].contains(reminderMinutes), snapshotPage == nil else { return }
-        let seconds = reminderMinutes * 60
-        reminderTask = Task { @MainActor [weak self] in
-            do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
-            guard let self, !self.isParentMode, UIApplication.shared.applicationState == .active else { return }
-            self.reminderVisible = true
+    func playToday(_ record: SpokenRecord) {
+        playEnglish(for: record)
+    }
+
+    func playChild(filename: String) {
+        guard let store, let url = try? store.audioURL(filename: filename) else { return }
+        audio?.playRecording(url: url)
+    }
+
+    func sayAgain() {
+        audio?.interrupt()
+        followPhase = .idle
+        speakPhase = .waiting
+    }
+
+    func beginFollow(record: SpokenRecord, wordID: String? = nil) async {
+        let phrase = store?.snapshot.phrases.first { $0.id == record.phraseID }
+        let text = phrase?.speechText ?? record.english
+        guard !text.isEmpty, let audio else { return }
+        followRecordID = record.id
+        followWordID = wordID
+        followPhase = .replaying
+        audio.speakSentence(text, slowThenNormal: false)
+        while audio.phase == .speaking {
+            try? await Task.sleep(for: .milliseconds(120))
         }
-    }
-
-    func stopActivityReminder() { reminderTask?.cancel(); reminderTask = nil; reminderVisible = false }
-    func finishActivity() { audio?.interrupt(); stopActivityReminder(); childTab = 0 }
-
-    /// Debug screenshots use an isolated library and never start audio or networking.
-    func captureScreenshotIfRequested() {
-        #if DEBUG
-        let args = ProcessInfo.processInfo.arguments
-        guard args.contains("--uitesting"), args.contains("--snapshot"), let store else { return }
-        Task { @MainActor in
-            do {
-                try await Task.sleep(for: .seconds(4))
-                guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
-                      let window = scene.windows.first(where: \.isKeyWindow) else { return }
-                let renderer = UIGraphicsImageRenderer(bounds: window.bounds)
-                var rendered = false
-                let picture = renderer.image { _ in rendered = window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
-                guard rendered, let png = picture.pngData() else { return }
-                try png.write(to: store.directory.appendingPathComponent("Screenshot.png"), options: [.atomic, .completeFileProtection])
-            } catch { /* Diagnostic failure never changes the family library. */ }
+        guard followPhase == .replaying else { return }
+        let problem = await audio.startChildRecording()
+        if let problem {
+            followPhase = .idle
+            await noteSetup(problem)
+            return
         }
-        #endif
+        followPhase = .recording
     }
 
-    #if DEBUG
-    private func seedPreviewLibrary(_ store: EchoStore) throws {
-        let toy = try store.createMoment(scene: "Toys", note: "今天一起玩红色小汽车，然后把它收进盒子。")
-        let food = try store.createMoment(scene: "Food", note: "Snack time with an apple and a glass of water.")
-        let car = Expression(momentID: toy.id, text: "A red car.", meaning: "一辆红色的小汽车。", segments: ["A red", "car."], isFavorite: true, source: "sample")
-        let apple = Expression(momentID: food.id, text: "I want an apple.", meaning: "我想要一个苹果。", isFavorite: true, source: "sample")
-        try store.saveExpressions([car, apple, Expression(momentID: toy.id, text: "Put the car in the box.", meaning: "把小汽车放进盒子。", segments: ["Put the car", "in the box."], isConfirmed: false, source: "sample draft", parentTip: "收玩具时一起说，不需要孩子完整跟读。")])
-        // Synthetic records exist only in this explicit isolated diagnostic library.
-        try store.recordUsage(expressionID: car.id, kind: .play)
+    func stopFollow() {
+        audio?.stopRecording()
+        Task { await followDidStop() }
     }
 
-    /// Capability-only evidence in the isolated test container. No mic, model calls or family content.
-    private func writeDiagnostics(store: EchoStore, audio: AudioController) {
-        let attributes = try? FileManager.default.attributesOfItem(atPath: store.directory.path)
-        let resources = try? store.directory.resourceValues(forKeys: [.isExcludedFromBackupKey])
-        let report: [String: Any] = [
-            "localStoreOpened": true,
-            "cloudEnabled": api.configuration.enabled,
-            "systemVersion": ProcessInfo.processInfo.operatingSystemVersionString,
-            "chineseOnDeviceRecognitionSupported": audio.onDeviceChinese,
-            "englishOnDeviceRecognitionSupported": audio.onDeviceEnglish,
-            "selectedVoiceID": audio.selectedVoiceID,
-            "voices": audio.voices.map { ["id": $0.id, "name": $0.name, "quality": $0.quality] },
-            "rootExcludedFromBackup": resources?.isExcludedFromBackup ?? false,
-            "rootProtection": String(describing: attributes?[.protectionKey] ?? "unknown"),
-            "microphoneStarted": false
-        ]
-        if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
-            try? data.write(to: store.directory.appendingPathComponent("Diagnostics.json"), options: [.atomic, .completeFileProtection])
-        }
+    func playWord(_ word: VocabularyWord) {
+        audio?.speakWord(word.english, ipa: word.ipa.isEmpty ? nil : word.ipa)
     }
-    #endif
 
-    func addSamples() throws {
+    func playWordLesson(_ word: VocabularyWord) {
+        let ipa = word.ipa.isEmpty ? nil : word.ipa
+        audio?.speakParts([
+            SpeechPart(text: word.english, rate: AVSpeechUtteranceDefaultSpeechRate, ipa: ipa),
+            SpeechPart(text: word.exampleEn, rate: 0.38, ipa: nil),
+            SpeechPart(text: word.exampleEn, rate: AVSpeechUtteranceDefaultSpeechRate, ipa: nil)
+        ])
+    }
+
+    func practiceWord(_ word: VocabularyWord) async {
         guard let store else { return }
-        let moment = try store.createMoment(scene: "Everyday", note: "Sample phrases for listening together. These are examples, not observations about your child.")
-        let examples: [(String, String)] = [
-            ("car", "汽车"), ("a red car", "一辆红色的小汽车"), ("water", "水"), ("Water, please.", "请给我水。"),
-            ("I can say my ABC.", "我会说 ABC。"), ("Put it in.", "把它放进去。"), ("a big truck", "一辆大卡车"),
-            ("I see a dog.", "我看见一只小狗。"), ("My turn.", "轮到我了。"), ("More, please.", "请再给我一点。"),
-            ("Let's go!", "我们走吧！"), ("Open the box.", "打开盒子。"), ("Close the door.", "关上门。"),
-            ("Wash your hands.", "洗洗手。"), ("Good morning.", "早上好。"), ("Good night.", "晚安。"),
-            ("I want milk.", "我想喝牛奶。"), ("Here you are.", "给你。"), ("Thank you.", "谢谢。"), ("All done!", "完成啦！")
-        ]
-        let expressions = examples.map { text, meaning in
-            Expression(momentID: moment.id, text: text, meaning: meaning,
-                spokenText: text == "I can say my ABC." ? "I can say my A, B, C." : "",
-                segments: text == "I can say my ABC." ? ["I can say", "my A, B, C"] : [], source: "sample")
+        let record = SpokenRecord(
+            recognizedText: word.chinese,
+            english: word.exampleEn,
+            chineseMeaning: word.exampleZh,
+            kind: .library)
+        guard let saved = try? store.addSpokenRecord(record) else {
+            showNotice("请让爸妈看看手机")
+            return
         }
-        try store.saveExpressions(expressions)
+        speakPhase = .result(saved.id)
+        await beginFollow(record: saved, wordID: word.id)
+    }
+
+    func authorizeKeyEntry() async -> Bool {
+        #if DEBUG
+        if isUITest { keyUnlocked = true; return true }
+        #endif
+        let context = LAContext()
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else { return false }
+        let granted = await withCheckedContinuation { continuation in
+            let box = AuthReplyBox(continuation)
+            context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "填写模型 API Key。") { ok, _ in
+                box.resume(ok)
+            }
+        }
+        keyUnlocked = granted
+        return granted
+    }
+
+    func setConsent(_ granted: Bool) {
+        try? store?.setModelConsent(granted: granted)
+        api.configuration.enabled = granted
+    }
+
+    func setCellular(_ allowed: Bool) {
+        try? store?.setAllowCellular(allowed)
+        api.configuration.allowsCellular = allowed
+    }
+
+    private func resolveCapture() async {
+        guard !resolvingCapture else { return }
+        resolvingCapture = true
+        defer { resolvingCapture = false }
+        guard let audio, let store else { return }
+        speakPhase = .working
+        let text = await audio.transcribeCurrentMandarin()
+        let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let consent = store.snapshot.consentGrantedAt != nil
+        let modelReady = api.configuration.enabled && api.hasKey(for: api.configuration.provider) && networkReady
+        switch UtterancePlanner.plan(text: trimmed, phrases: store.snapshot.phrases, consent: consent, modelReady: modelReady) {
+        case .unheard:
+            audio.discardTemporaryRecording()
+            showNotice("没听清，请再说一遍")
+        case .library(let phrase):
+            await save(record: SpokenRecord(
+                recognizedText: trimmed,
+                english: phrase.english,
+                chineseMeaning: phrase.chinese,
+                phraseID: phrase.id,
+                kind: .library), audio: audio)
+        case .callModel:
+            do {
+                let candidates = try await api.generate(sceneText: String(trimmed.prefix(1_000)))
+                guard let first = candidates.first else { throw ModelServiceError.malformedResponse }
+                await save(record: SpokenRecord(
+                    recognizedText: trimmed,
+                    english: first.text,
+                    chineseMeaning: first.meaning,
+                    kind: .pendingParent), audio: audio)
+            } catch {
+                await savePending(trimmed, audio: audio)
+            }
+        case .savePending:
+            await savePending(trimmed, audio: audio)
+        }
+    }
+
+    private func savePending(_ text: String, audio: AudioController) async {
+        await save(record: SpokenRecord(recognizedText: text, kind: .pendingParent), audio: audio, notice: "这句先记下了，爸妈晚上补英文")
+    }
+
+    private func save(record: SpokenRecord, audio: AudioController, notice: String? = nil) async {
+        guard let store else { return }
+        do {
+            let saved = try store.addSpokenRecord(record, audioTemporaryURL: audio.temporaryRecordingURL)
+            if let notice {
+                showNotice(notice)
+            } else {
+                speakPhase = .result(saved.id)
+            }
+        } catch {
+            audio.discardTemporaryRecording()
+            showNotice("请让爸妈看看手机")
+        }
+    }
+
+    private var networkReady: Bool {
+        guard let store else { return false }
+        if store.snapshot.allowCellular { return api.networkReachable || api.wifiAvailable }
+        return api.wifiAvailable
+    }
+
+    private func noteSetup(_ problem: CaptureProblem) async {
+        let code: String
+        switch problem {
+        case .microphone: code = "microphone"
+        case .speech: code = "speech"
+        case .mandarinAssets: code = "mandarin-assets"
+        case .failed: code = "recording"
+        }
+        try? store?.logSetupIssue(code: code, message: "请检查麦克风、语音识别，或下载普通话（中国大陆）离线语音。")
+        showNotice("请让爸妈看看手机")
+    }
+
+    private func showNotice(_ text: String) {
+        speakPhase = .notice(text)
+        audio?.speakMandarin(text)
+    }
+
+    func record(id: UUID) -> SpokenRecord? {
+        store?.snapshot.records.first { $0.id == id }
+    }
+}
+
+private final class AuthReplyBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Bool, Never>?
+    init(_ continuation: CheckedContinuation<Bool, Never>) { self.continuation = continuation }
+    func resume(_ value: Bool) {
+        lock.lock()
+        let current = continuation
+        continuation = nil
+        lock.unlock()
+        current?.resume(returning: value)
     }
 }
