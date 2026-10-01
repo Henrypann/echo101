@@ -10,14 +10,36 @@ public enum ModelProvider: String, Codable, CaseIterable, Identifiable, Sendable
     }
 }
 
-public struct ModelConfiguration: Codable, Equatable, Sendable {
+public struct ModelConfiguration: Equatable, Sendable {
     public var provider: ModelProvider
     public var modelID: String
     public var enabled: Bool
-    public init(provider: ModelProvider = .deepSeek, modelID: String? = nil, enabled: Bool = false) {
+    public var allowCellular: Bool
+    public init(provider: ModelProvider = .deepSeek, modelID: String? = nil, enabled: Bool = false, allowCellular: Bool = false) {
         self.provider = provider
         self.modelID = modelID ?? provider.defaultModelID
         self.enabled = enabled
+        self.allowCellular = allowCellular
+    }
+
+    private enum CodingKeys: String, CodingKey { case provider, modelID, enabled, allowCellular }
+}
+
+extension ModelConfiguration: Codable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        provider = try container.decode(ModelProvider.self, forKey: .provider)
+        modelID = try container.decode(String.self, forKey: .modelID)
+        enabled = try container.decode(Bool.self, forKey: .enabled)
+        allowCellular = try container.decodeIfPresent(Bool.self, forKey: .allowCellular) ?? false
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(provider, forKey: .provider)
+        try container.encode(modelID, forKey: .modelID)
+        try container.encode(enabled, forKey: .enabled)
+        try container.encode(allowCellular, forKey: .allowCellular)
     }
 }
 

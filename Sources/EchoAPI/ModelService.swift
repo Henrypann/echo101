@@ -6,6 +6,7 @@ import Combine
         didSet {
             guard oldValue != configuration else { return }
             cancel()
+            network.setAllowsCellular(configuration.allowCellular)
             if let data = try? JSONEncoder().encode(configuration) { defaults.set(data, forKey: Self.configurationKey) }
         }
     }
@@ -30,8 +31,10 @@ import Combine
     init(defaults: UserDefaults, credentials: any ModelCredentialStore, network: any WiFiMonitoring,
          transport: any ModelTransport, now: @escaping () -> Date = Date.init) {
         self.defaults = defaults; self.credentials = credentials; self.network = network; self.transport = transport; self.now = now
-        configuration = defaults.data(forKey: Self.configurationKey).flatMap { try? JSONDecoder().decode(ModelConfiguration.self, from: $0) } ?? ModelConfiguration()
+        let loaded = defaults.data(forKey: Self.configurationKey).flatMap { try? JSONDecoder().decode(ModelConfiguration.self, from: $0) } ?? ModelConfiguration()
+        configuration = loaded
         wifiAvailable = network.available
+        network.setAllowsCellular(loaded.allowCellular)
         refreshQuota()
         network.start { [weak self] available in
             self?.wifiAvailable = available

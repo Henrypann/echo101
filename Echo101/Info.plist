@@ -14,9 +14,9 @@
 <key>UIApplicationSceneManifest</key><dict><key>UIApplicationSupportsMultipleScenes</key><false/></dict>
 <key>UILaunchScreen</key><dict/>
 <key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string></array>
-<key>NSMicrophoneUsageDescription</key><string>Record a short family moment or a practice voice only when you tap Record. Audio stays on this iPhone.</string>
-<key>NSFaceIDUsageDescription</key><string>Verify an adult before opening family moments and privacy settings.</string>
-<key>NSSpeechRecognitionUsageDescription</key><string>Turn a short recording into editable text using on-device recognition when available. Echo never falls back to cloud transcription.</string>
+<key>NSMicrophoneUsageDescription</key><string>老人按一下之后，把正在发生的事录下来。录音只留在这台手机上。</string>
+<key>NSFaceIDUsageDescription</key><string>仅在填写模型 API Key 时确认是爸妈本人。看句子和录音不需要这一步。</string>
+<key>NSSpeechRecognitionUsageDescription</key><string>在这台手机上把普通话转成文字，用来匹配英文。声音不会上传识别。</string>
 <key>UIFileSharingEnabled</key><false/>
 <key>LSSupportsOpeningDocumentsInPlace</key><true/>
 </dict></plist>

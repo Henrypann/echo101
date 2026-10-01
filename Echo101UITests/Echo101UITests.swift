@@ -3,122 +3,100 @@ import XCTest
 @MainActor
 final class Echo101UITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
-    private func app(run: String = UUID().uuidString, parent: Bool = true, seeded: Bool = false) -> XCUIApplication {
+
+    private func app(run: String = UUID().uuidString, parent: Bool = false, pending: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--test-run-id", run]
         if parent { app.launchArguments.append("--test-parent") }
-        if seeded { app.launchArguments.append("--seed-samples") }
+        if pending { app.launchArguments.append("--seed-pending") }
         return app
     }
+
     private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
-        for _ in 0..<8 {
+        for _ in 0..<12 {
             if element.exists && element.isHittable { return }
             app.swipeUp()
         }
     }
+
     private func screenshot(_ name: String, _ app: XCUIApplication) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
-        attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
-    func testMomentExpressionPersistsAndCanBeDeleted() throws {
-        let run = UUID().uuidString
-        let app = app(run: run)
-        app.launch()
-        XCTAssertTrue(app.buttons["addMoment"].waitForExistence(timeout: 15))
-        screenshot("Home-empty", app)
-        reveal(app.buttons["addMoment"], in: app)
-        app.buttons["addMoment"].tap()
-        let note = app.descendants(matching: .any)["momentNote"].firstMatch
-        XCTAssertTrue(note.waitForExistence(timeout: 5))
-        note.tap(); note.typeText("A red toy car at home")
-        app.buttons["saveMoment"].tap()
-        let moment = app.staticTexts["A red toy car at home"].firstMatch
-        reveal(moment, in: app)
-        XCTAssertTrue(moment.waitForExistence(timeout: 5)); moment.tap()
-        reveal(app.buttons["addExpression"], in: app)
-        app.buttons["addExpression"].tap()
-        let english = app.descendants(matching: .any)["englishText"].firstMatch
-        XCTAssertTrue(english.waitForExistence(timeout: 5))
-        english.tap(); english.typeText("A red car.")
-        app.buttons["saveExpression"].tap()
-        let savedExpression = app.staticTexts["A red car."].firstMatch
-        XCTAssertTrue(savedExpression.waitForExistence(timeout: 10))
-        reveal(savedExpression, in: app)
-        savedExpression.tap()
-        XCTAssertTrue(app.buttons["playExpression"].waitForExistence(timeout: 5))
-        screenshot("Expression", app)
-        // Deliberately do not start microphones or change network/system settings.
-        app.terminate(); app.launch()
-        reveal(app.staticTexts["A red car."].firstMatch, in: app)
-        XCTAssertTrue(app.staticTexts["A red car."].firstMatch.waitForExistence(timeout: 10))
-        app.staticTexts["A red car."].firstMatch.tap()
-        reveal(app.buttons["Delete Expression"], in: app)
-        app.buttons["Delete Expression"].tap()
-        let confirmDelete = app.alerts.buttons["Delete"]
-        XCTAssertTrue(confirmDelete.waitForExistence(timeout: 5))
-        confirmDelete.tap()
-        // A successful tap is not proof that SwiftUI has finished dismissing.
-        let removed = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "exists == false"),
-            object: app.staticTexts["expressionTitle"]
-        )
-        XCTAssertEqual(XCTWaiter.wait(for: [removed], timeout: 10), .completed)
-        XCTAssertTrue(app.buttons["addMoment"].waitForExistence(timeout: 10))
-        screenshot("Expression-deleted", app)
-        // Verify durable deletion, not just a transient navigation change.
-        app.terminate(); app.launch()
-        XCTAssertTrue(app.buttons["addMoment"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.staticTexts["A red toy car at home"].firstMatch.waitForExistence(timeout: 10))
-        XCTAssertFalse(app.staticTexts["A red car."].firstMatch.exists)
-        screenshot("Deletion-persists-after-relaunch", app)
-        app.terminate()
-    }
-    func testSettingsDiagnosticsAndCloudOffByDefault() throws {
+
+    func testGrandparentPageIsOneScreenWithoutTabs() throws {
         let app = app()
         app.launch()
-        app.tabBars.buttons["Settings"].tap()
-        let microphone = app.buttons["microphoneSettings"].firstMatch
-        reveal(microphone, in: app)
-        XCTAssertTrue(microphone.waitForExistence(timeout: 5))
-        microphone.tap()
-        reveal(app.buttons["Refresh Voices & Capabilities"], in: app)
-        XCTAssertTrue(app.buttons["Refresh Voices & Capabilities"].waitForExistence(timeout: 5))
-        screenshot("Voice-diagnostics", app)
-        let summary = app.staticTexts.allElementsBoundByIndex.map(\.label)
-            .filter { $0.contains("recognition") || $0 == "Supported" || $0 == "Unavailable" }
-            .joined(separator: "\n")
-        let attachment = XCTAttachment(string: summary)
-        attachment.name = "Device-capability-labels"; attachment.lifetime = .keepAlways; add(attachment)
-        let enabled = app.switches["cloudGenerationToggle"]
-        reveal(enabled, in: app)
-        XCTAssertTrue(enabled.waitForExistence(timeout: 5))
-        XCTAssertEqual(enabled.value as? String, "0")
-        screenshot("Model-settings", app)
-        app.terminate()
-    }
-    func testCaptureCanBeCancelledWithoutStartingMicrophone() throws {
-        let app = app(); app.launch()
-        reveal(app.buttons["captureMoment"], in: app)
-        app.buttons["captureMoment"].tap()
-        XCTAssertTrue(app.buttons["startRecording"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["stopRecording"].exists)
-        screenshot("Capture-ready", app)
-        app.buttons["Cancel"].tap()
-        XCTAssertTrue(app.buttons["addMoment"].waitForExistence(timeout: 5))
+        let record = app.buttons["recordButton"]
+        XCTAssertTrue(record.waitForExistence(timeout: 15))
+        XCTAssertTrue(record.label.contains("按一下，说中文"))
+        XCTAssertTrue(app.descendants(matching: .any)["parentEntry"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.tabBars.count, 0)
+        XCTAssertFalse(app.buttons["addMoment"].exists)
+        XCTAssertFalse(app.tabBars.buttons["Today"].exists)
+        XCTAssertFalse(app.tabBars.buttons["Settings"].exists)
+        screenshot("Grandparent-waiting", app)
         app.terminate()
     }
 
-    func testChildScreensDoNotExposeDraftsOrParentNotes() throws {
-        let app = app(parent: false, seeded: true)
+    func testLongPressOpensParentAndLeaveReturns() throws {
+        let app = app()
         app.launch()
-        XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.tabBars.buttons["Settings"].exists)
-        XCTAssertFalse(app.staticTexts["今天一起玩红色小汽车，然后把它收进盒子。"].exists)
-        app.tabBars.buttons["Explore"].tap()
-        app.staticTexts["Toys"].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["A red car."].firstMatch.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["Put the car in the box."].exists)
-        screenshot("Child-explore-confirmed-only", app)
+        let entry = app.descendants(matching: .any)["parentEntry"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 15))
+        XCTAssertTrue(entry.isHittable)
+        entry.press(forDuration: 4)
+        XCTAssertTrue(app.descendants(matching: .any)["parentTitle"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.tabBars.count, 0)
+        screenshot("Parent-after-long-press", app)
+        app.descendants(matching: .any)["leaveParent"].tap()
+        XCTAssertTrue(app.buttons["recordButton"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.descendants(matching: .any)["parentTitle"].exists)
+        app.terminate()
+    }
+
+    func testSettingsStayOffAndExportReminderShows() throws {
+        let app = app(parent: true)
+        app.launch()
+        XCTAssertTrue(app.descendants(matching: .any)["parentTitle"].waitForExistence(timeout: 15))
+        let consent = app.switches["consentToggle"]
+        reveal(consent, in: app)
+        XCTAssertTrue(consent.waitForExistence(timeout: 5))
+        XCTAssertEqual(consent.value as? String, "0")
+        let cellular = app.switches["cellularToggle"]
+        reveal(cellular, in: app)
+        XCTAssertTrue(cellular.waitForExistence(timeout: 5))
+        XCTAssertEqual(cellular.value as? String, "0")
+        let reminder = app.staticTexts["exportReminder"]
+        reveal(reminder, in: app)
+        XCTAssertTrue(reminder.waitForExistence(timeout: 5))
+        XCTAssertTrue(reminder.label.contains("还没有导出过"))
+        screenshot("Parent-settings", app)
+        app.terminate()
+    }
+
+    func testPendingSentenceJoinsLibraryOnlyAfterConfirm() throws {
+        let app = app(parent: true, pending: true)
+        app.launch()
+        let pending = app.descendants(matching: .any)["pendingRow"]
+        XCTAssertTrue(pending.waitForExistence(timeout: 15))
+        pending.tap()
+        let confirm = app.buttons["confirmPending"]
+        reveal(confirm, in: app)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 8))
+        XCTAssertTrue(confirm.isHittable)
+        XCTAssertTrue(app.staticTexts["宝宝要喝水"].waitForExistence(timeout: 5))
+        confirm.tap()
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.buttons["confirmPending"])
+        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed)
+        XCTAssertFalse(app.descendants(matching: .any)["pendingRow"].exists)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.descendants(matching: .any)["parentTitle"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.descendants(matching: .any)["pendingRow"].exists)
+        screenshot("Pending-confirmed", app)
         app.terminate()
     }
 }

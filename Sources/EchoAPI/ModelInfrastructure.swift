@@ -24,8 +24,10 @@ final class SessionModelTransport: ModelTransport, Sendable {
     let session: URLSession
     static func configuration() -> URLSessionConfiguration {
         let config = URLSessionConfiguration.ephemeral
-        config.allowsCellularAccess = false
-        config.allowsExpensiveNetworkAccess = false
+        // The session must allow cellular so a parent toggle can opt in per request.
+        // Each request still defaults to Wi-Fi only unless that toggle is on.
+        config.allowsCellularAccess = true
+        config.allowsExpensiveNetworkAccess = true
         config.allowsConstrainedNetworkAccess = false
         config.waitsForConnectivity = false
         config.timeoutIntervalForRequest = 30
@@ -53,22 +55,67 @@ final class SessionModelTransport: ModelTransport, Sendable {
 @MainActor protocol WiFiMonitoring: AnyObject {
     var available: Bool { get }
     func start(_ update: @escaping @MainActor (Bool) -> Void)
+    func setAllowsCellular(_ allowed: Bool)
+}
+
+extension WiFiMonitoring {
+    func setAllowsCellular(_ allowed: Bool) {}
+}
+
+private struct PathSnapshot: Sendable {
+    var satisfied = false
+    var wifi = false
+    var expensive = false
+    var constrained = false
 }
 
 @MainActor final class WiFiMonitor: WiFiMonitoring {
     private let monitor = NWPathMonitor()
+    private let cellular = CellularPermission()
+    private var latest = PathSnapshot()
+    private var update: (@MainActor (Bool) -> Void)?
     private(set) var available = false
+
+    func setAllowsCellular(_ allowed: Bool) {
+        cellular.set(allowed)
+        publish()
+    }
+
     func start(_ update: @escaping @MainActor (Bool) -> Void) {
+        self.update = update
         monitor.pathUpdateHandler = { [weak self] path in
-            let allowed = path.status == .satisfied && path.usesInterfaceType(.wifi) && !path.isExpensive && !path.isConstrained
+            let snapshot = PathSnapshot(
+                satisfied: path.status == .satisfied,
+                wifi: path.usesInterfaceType(.wifi),
+                expensive: path.isExpensive,
+                constrained: path.isConstrained
+            )
             Task { @MainActor [weak self] in
-                self?.available = allowed
-                update(allowed)
+                self?.latest = snapshot
+                self?.publish()
             }
         }
         monitor.start(queue: DispatchQueue(label: "com.henrypann.echo101.wifi"))
     }
+
+    private func publish() {
+        let path = latest
+        let allowed = path.satisfied && !path.constrained && (
+            (path.wifi && !path.expensive) || cellular.get()
+        )
+        available = allowed
+        update?(allowed)
+    }
+
     deinit { monitor.cancel() }
+}
+
+/// Read from the path-monitor queue and written from the main actor.
+private final class CellularPermission: @unchecked Sendable {
+    private let lock = NSLock()
+    private var allowed = false
+    func get() -> Bool { lock.lock(); defer { lock.unlock() }; return allowed }
+    func set(_ allowed: Bool) { lock.lock(); self.allowed = allowed; lock.unlock() }
 }
 
 @MainActor protocol ModelCredentialStore: AnyObject {
