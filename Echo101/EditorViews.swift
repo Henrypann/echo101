@@ -132,8 +132,9 @@ struct WordListPage: View {
                         .padding(.bottom, 8)
                     ForEach(category.words) { word in
                         Button {
-                            model.playWord(word)
                             path.append(.word(word.id))
+                            let spoken = word
+                            Task { @MainActor in model.playWord(spoken) }
                         } label: {
                             HStack(spacing: 12) {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -143,21 +144,26 @@ struct WordListPage: View {
                                         .font(.system(size: 20))
                                         .foregroundStyle(EchoStyle.textSecondary)
                                 }
-                                Spacer()
+                                Spacer(minLength: 8)
                                 if store.repeatedWordIDs.contains(word.id) {
                                     Image(systemName: "star.fill")
                                         .font(.system(size: 22))
                                         .foregroundStyle(EchoStyle.accent)
+                                        .accessibilityHidden(true)
                                 }
                                 Image(systemName: "play.fill")
                                     .font(.system(size: 44))
                                     .frame(width: 44, height: 44)
+                                    .accessibilityHidden(true)
                             }
                             .foregroundStyle(Color.black)
                             .frame(maxWidth: .infinity, minHeight: 88)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
                         .accessibilityIdentifier("word-\(word.id)")
+                        .accessibilityAddTraits(.isButton)
                         Divider()
                     }
                 }

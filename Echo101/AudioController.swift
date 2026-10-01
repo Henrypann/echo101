@@ -136,7 +136,6 @@ final class AudioController: NSObject, ObservableObject {
         activeWordIndex = nil
         let chunks = parts.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         guard !chunks.isEmpty else { return }
-        refreshCapabilities()
         guard let voice = englishVoice() else {
             errorMessage = "请让爸妈看看手机"
             return
