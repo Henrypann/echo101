@@ -15,7 +15,14 @@
           "emoji": "",
           "exampleEn": "Look, this is West Lake!",
           "exampleZh": "看，这是西湖！",
-          "ipa": ""
+          "ipa": "",
+          "image": "hz-west-lake",
+          "credit": {
+            "author": "Joefang20031128",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:2022_%E5%B9%B4_2_%E6%9C%88_1_%E6%97%A5%EF%BC%8C%E6%9D%AD%E5%B7%9E%E8%A5%BF%E6%B9%96.jpg"
+          }
         },
         {
           "id": "broken-bridge",
@@ -24,7 +31,14 @@
           "emoji": "",
           "exampleEn": "The old bridge is here.",
           "exampleZh": "老桥就在这里。",
-          "ipa": ""
+          "ipa": "",
+          "image": "hz-broken-bridge",
+          "credit": {
+            "author": "江上清风1961",
+            "license": "CC BY 3.0",
+            "licenseURL": "https://creativecommons.org/licenses/by/3.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:%E7%99%BD%E5%A0%A4%E6%96%AD%E6%A1%A5,_2006-05-13.jpg"
+          }
         },
         {
           "id": "bai-causeway",
@@ -33,7 +47,14 @@
           "emoji": "",
           "exampleEn": "We walk on Bai Causeway.",
           "exampleZh": "我们走在白堤上。",
-          "ipa": "baɪ ˈkɔːzweɪ"
+          "ipa": "baɪ ˈkɔːzweɪ",
+          "image": "hz-bai-causeway",
+          "credit": {
+            "author": "guan",
+            "license": "CC BY 3.0",
+            "licenseURL": "https://creativecommons.org/licenses/by/3.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:%E8%A5%BF%E6%B9%96_%E7%99%BD%E5%A0%A4_-_panoramio.jpg"
+          }
         },
         {
           "id": "su-causeway",
@@ -42,7 +63,14 @@
           "emoji": "",
           "exampleEn": "Trees line Su Causeway.",
           "exampleZh": "苏堤两边都是树。",
-          "ipa": "suː ˈkɔːzweɪ"
+          "ipa": "suː ˈkɔːzweɪ",
+          "image": "hz-su-causeway",
+          "credit": {
+            "author": "zhiyin586@163.com",
+            "license": "CC BY 3.0",
+            "licenseURL": "https://creativecommons.org/licenses/by/3.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:%E6%9D%AD%E5%B7%9E._%E8%A5%BF%E6%B9%96._%E8%8B%8F%E5%A0%A4%E6%98%A5%E6%99%93_-_panoramio.jpg"
+          }
         },
         {
           "id": "leifeng",
@@ -51,7 +79,14 @@
           "emoji": "",
           "exampleEn": "I see Leifeng Pagoda.",
           "exampleZh": "我看见雷峰塔。",
-          "ipa": "ˈleɪfʊŋ pəˈɡoʊdə"
+          "ipa": "ˈleɪfʊŋ pəˈɡoʊdə",
+          "image": "hz-leifeng",
+          "credit": {
+            "author": "marroyo12",
+            "license": "CC BY 2.0",
+            "licenseURL": "https://creativecommons.org/licenses/by/2.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:Leifeng_Pagoda_%E9%9B%B7%E5%B3%B0%E5%A1%94_(44181959845).jpg"
+          }
         },
         {
           "id": "three-pools",
@@ -60,7 +95,14 @@
           "emoji": "",
           "exampleEn": "Three pools shine at night.",
           "exampleZh": "三个潭晚上亮亮的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "hz-three-pools",
+          "credit": {
+            "author": "lienyuan lee",
+            "license": "CC BY 3.0",
+            "licenseURL": "https://creativecommons.org/licenses/by/3.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:%E4%B8%89%E6%BD%AD%E5%8D%B0%E6%9C%88_Three_Ponds_MirrorIng_the_Moon_-_panoramio.jpg"
+          }
         },
         {
           "id": "lingyin",
@@ -69,7 +111,14 @@
           "emoji": "",
           "exampleEn": "This is Lingyin Temple.",
           "exampleZh": "这是灵隐寺。",
-          "ipa": "ˈlɪŋjɪn ˈtɛmpəl"
+          "ipa": "ˈlɪŋjɪn ˈtɛmpəl",
+          "image": "hz-lingyin",
+          "credit": {
+            "author": "Tyg728",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:Lingyin_Temple,_Hangzhou_20161003.jpg"
+          }
         },
         {
           "id": "feilai",
@@ -78,7 +127,14 @@
           "emoji": "",
           "exampleEn": "This hill is Feilai Peak.",
           "exampleZh": "这座山是飞来峰。",
-          "ipa": "ˈfeɪlaɪ piːk"
+          "ipa": "ˈfeɪlaɪ piːk",
+          "image": "hz-feilai",
+          "credit": {
+            "author": "Gisling",
+            "license": "CC BY-SA 3.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/3.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:Feilaifeng.JPG"
+          }
         },
         {
           "id": "hefang",
@@ -87,7 +143,14 @@
           "emoji": "",
           "exampleEn": "We walk on Hefang Street.",
           "exampleZh": "我们走在河坊街。",
-          "ipa": "ˈhɜːfɑŋ striːt"
+          "ipa": "ˈhɜːfɑŋ striːt",
+          "image": "hz-hefang",
+          "credit": {
+            "author": "钉钉",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:Hefang_Street,_Hangzhou.jpg"
+          }
         },
         {
           "id": "longjing-village",
@@ -96,7 +159,14 @@
           "emoji": "",
           "exampleEn": "This is Longjing Village.",
           "exampleZh": "这是龙井村。",
-          "ipa": "ˈlɒŋdʒɪŋ ˈvɪlɪdʒ"
+          "ipa": "ˈlɒŋdʒɪŋ ˈvɪlɪdʒ",
+          "image": "hz-longjing-village",
+          "credit": {
+            "author": "zhiyin586@163.com",
+            "license": "CC BY 3.0",
+            "licenseURL": "https://creativecommons.org/licenses/by/3.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:%E6%9D%AD%E5%B7%9E.%E9%BE%99%E4%BA%95%E6%9D%91_-_panoramio.jpg"
+          }
         },
         {
           "id": "longjing-tea",
@@ -105,7 +175,14 @@
           "emoji": "",
           "exampleEn": "I smell Longjing tea.",
           "exampleZh": "我闻到龙井茶。",
-          "ipa": "ˈlɒŋdʒɪŋ tiː"
+          "ipa": "ˈlɒŋdʒɪŋ tiː",
+          "image": "hz-longjing-tea",
+          "credit": {
+            "author": "Difference engine",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:Longjing_tea.jpg"
+          }
         },
         {
           "id": "xixi",
@@ -114,7 +191,14 @@
           "emoji": "",
           "exampleEn": "Birds live at Xixi Wetland.",
           "exampleZh": "鸟儿住在西溪湿地。",
-          "ipa": "ˈʃiːʃi ˈwɛtlænd"
+          "ipa": "ˈʃiːʃi ˈwɛtlænd",
+          "image": "hz-xixi",
+          "credit": {
+            "author": "江上清风1961",
+            "license": "CC BY 3.0",
+            "licenseURL": "https://creativecommons.org/licenses/by/3.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:%E8%A5%BF%E6%BA%AA%E5%9B%BD%E5%AE%B6%E6%B9%BF%E5%9C%B0%E5%85%AC%E5%9B%AD%E7%BE%8E%E6%99%AF_-_panoramio.jpg"
+          }
         },
         {
           "id": "yuefei",
@@ -123,7 +207,14 @@
           "emoji": "",
           "exampleEn": "This temple honors Yue Fei.",
           "exampleZh": "这座庙纪念岳飞。",
-          "ipa": "ˌjuːˈeɪ ˈfeɪ ˈtɛmpəl"
+          "ipa": "ˌjuːˈeɪ ˈfeɪ ˈtɛmpəl",
+          "image": "hz-yuefei",
+          "credit": {
+            "author": "钉钉",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:Memorial_Hall_of_Yue_Fei_Temple,_Hangzhou.jpg"
+          }
         },
         {
           "id": "liuhe",
@@ -132,7 +223,14 @@
           "emoji": "",
           "exampleEn": "The pagoda is very tall.",
           "exampleZh": "这座塔很高。",
-          "ipa": ""
+          "ipa": "",
+          "image": "hz-liuhe",
+          "credit": {
+            "author": "钉钉",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:Liuhe_Pagoda,_Hangzhou.jpg"
+          }
         },
         {
           "id": "qiantang",
@@ -141,7 +239,14 @@
           "emoji": "",
           "exampleEn": "This is Qiantang River.",
           "exampleZh": "这是钱塘江。",
-          "ipa": "ˈtʃjɛntɑŋ ˈrɪvər"
+          "ipa": "ˈtʃjɛntɑŋ ˈrɪvər",
+          "image": "hz-qiantang",
+          "credit": {
+            "author": "Windmemories",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:20260802_Qiantang_River_in_Hangzhou.jpg"
+          }
         },
         {
           "id": "hangzhou-zoo",
@@ -150,7 +255,14 @@
           "emoji": "",
           "exampleEn": "We visit Hangzhou Zoo.",
           "exampleZh": "我们去杭州动物园。",
-          "ipa": "hɑŋˈdʒoʊ zuː"
+          "ipa": "hɑŋˈdʒoʊ zuː",
+          "image": "hz-hangzhou-zoo",
+          "credit": {
+            "author": "EditQ",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:%E6%9D%AD%E5%B7%9E%E5%8A%A8%E7%89%A9%E5%9B%AD.jpg"
+          }
         },
         {
           "id": "dongpo",
@@ -159,7 +271,14 @@
           "emoji": "",
           "exampleEn": "Dongpo Pork smells good.",
           "exampleZh": "东坡肉好香。",
-          "ipa": "ˈdʊŋpoʊ pɔːrk"
+          "ipa": "ˈdʊŋpoʊ pɔːrk",
+          "image": "hz-dongpo",
+          "credit": {
+            "author": "superturtle",
+            "license": "CC BY 2.0",
+            "licenseURL": "https://creativecommons.org/licenses/by/2.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:Dongpo_pork_by_superturtle.jpg"
+          }
         },
         {
           "id": "vinegar-fish",
@@ -168,7 +287,14 @@
           "emoji": "",
           "exampleEn": "The fish is sweet and sour.",
           "exampleZh": "这鱼又酸又甜。",
-          "ipa": ""
+          "ipa": "",
+          "image": "hz-vinegar-fish",
+          "credit": {
+            "author": "Zheng Zhou",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:West_Lake_Fish_in_Vinegar_Gravy.jpg"
+          }
         },
         {
           "id": "xiaolongbao",
@@ -177,7 +303,14 @@
           "emoji": "",
           "exampleEn": "I like soup dumplings.",
           "exampleZh": "我喜欢小笼包。",
-          "ipa": ""
+          "ipa": "",
+          "image": "hz-xiaolongbao",
+          "credit": {
+            "author": "Robigasp",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:Xiaolongbao_Shanghai.jpg"
+          }
         },
         {
           "id": "boat",
@@ -186,7 +319,14 @@
           "emoji": "",
           "exampleEn": "We ride a small boat.",
           "exampleZh": "我们坐小船。",
-          "ipa": ""
+          "ipa": "",
+          "image": "hz-boat",
+          "credit": {
+            "author": "zhiyin586@163.com",
+            "license": "CC BY 3.0",
+            "licenseURL": "https://creativecommons.org/licenses/by/3.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:%E6%9D%AD%E5%B7%9E._%E8%A5%BF%E6%B9%96%E6%B8%B8%E8%88%B9%EF%BC%88%E8%83%8C%E6%99%AF%EF%BC%9A%E9%9B%B7%E5%B3%B0%E5%A1%94%EF%BC%89_-_panoramio.jpg"
+          }
         },
         {
           "id": "subway",
@@ -195,7 +335,14 @@
           "emoji": "",
           "exampleEn": "We ride the subway.",
           "exampleZh": "我们坐地铁。",
-          "ipa": ""
+          "ipa": "",
+          "image": "hz-subway",
+          "credit": {
+            "author": "MasaneMiyaPA",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:%E6%9D%AD%E5%B7%9E%E5%9C%B0%E9%93%811%E5%8F%B7%E7%BA%BF%E5%88%97%E8%BD%A6%E7%A6%BB%E5%BC%80%E4%B9%94%E5%8F%B8%E7%AB%99%E5%90%91%E4%B9%94%E5%8F%B8%E5%8D%97%E9%A9%B6%E5%8E%BBIMG_0154.JPG"
+          }
         },
         {
           "id": "train",
@@ -204,7 +351,14 @@
           "emoji": "",
           "exampleEn": "The train goes very fast.",
           "exampleZh": "火车开得很快。",
-          "ipa": ""
+          "ipa": "",
+          "image": "hz-train",
+          "credit": {
+            "author": "Baycrest",
+            "license": "CC BY-SA 2.5",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/2.5",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:G6511_CR400AF-A-2072_at_Shenzhen_North_Railway_Station.jpg"
+          }
         },
         {
           "id": "hotel",
@@ -213,7 +367,14 @@
           "emoji": "",
           "exampleEn": "We sleep at the hotel.",
           "exampleZh": "我们住在酒店。",
-          "ipa": ""
+          "ipa": "",
+          "image": "hz-hotel",
+          "credit": {
+            "author": "Nat4Eben",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:Four_Seasons_Hotel_Hangzhou_West_Lake_20201001.jpg"
+          }
         },
         {
           "id": "hangzhou",
@@ -222,7 +383,14 @@
           "emoji": "",
           "exampleEn": "We are in Hangzhou.",
           "exampleZh": "我们在杭州。",
-          "ipa": "hɑŋˈdʒoʊ"
+          "ipa": "hɑŋˈdʒoʊ",
+          "image": "hz-hangzhou",
+          "credit": {
+            "author": "Windmemories",
+            "license": "CC BY-SA 4.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:20260424_West_Lake_and_Hangzhou_Skyline.jpg"
+          }
         },
         {
           "id": "hupao",
@@ -231,7 +399,14 @@
           "emoji": "",
           "exampleEn": "Water comes from the spring.",
           "exampleZh": "泉水从这里出来。",
-          "ipa": "ˈhuːpaʊ sprɪŋ"
+          "ipa": "ˈhuːpaʊ sprɪŋ",
+          "image": "hz-hupao",
+          "credit": {
+            "author": "zhiyin586@163.com",
+            "license": "CC BY 3.0",
+            "licenseURL": "https://creativecommons.org/licenses/by/3.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:%E6%9D%AD%E5%B7%9E_%E8%99%8E%E8%B7%91%EF%BC%88%E5%A4%A9%E4%B8%8B%E7%AC%AC%E4%B8%89%E6%B3%89-%E8%99%8E%E8%B7%91%E6%B3%89%EF%BC%89_-_panoramio.jpg"
+          }
         },
         {
           "id": "prince-bay",
@@ -240,9 +415,17 @@
           "emoji": "",
           "exampleEn": "Flowers grow in the park.",
           "exampleZh": "公园里开着花。",
-          "ipa": ""
+          "ipa": "",
+          "image": "hz-prince-bay",
+          "credit": {
+            "author": "Huandy618",
+            "license": "CC BY-SA 3.0",
+            "licenseURL": "https://creativecommons.org/licenses/by-sa/3.0",
+            "sourceURL": "https://commons.wikimedia.org/wiki/File:Taiziwan_Park_02.jpg"
+          }
         }
-      ]
+      ],
+      "image": "hz-west-lake"
     },
     {
       "id": "food",
@@ -259,7 +442,8 @@
           "emoji": "🍚",
           "exampleEn": "I eat warm rice.",
           "exampleZh": "我吃热米饭。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F35A"
         },
         {
           "id": "noodles",
@@ -268,7 +452,8 @@
           "emoji": "🍜",
           "exampleEn": "I like long noodles.",
           "exampleZh": "我喜欢长面条。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F35C"
         },
         {
           "id": "bread",
@@ -277,7 +462,8 @@
           "emoji": "🍞",
           "exampleEn": "I eat soft bread.",
           "exampleZh": "我吃软面包。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F35E"
         },
         {
           "id": "egg",
@@ -286,7 +472,8 @@
           "emoji": "🥚",
           "exampleEn": "I eat a boiled egg.",
           "exampleZh": "我吃一个煮鸡蛋。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F95A"
         },
         {
           "id": "milk",
@@ -295,7 +482,8 @@
           "emoji": "🥛",
           "exampleEn": "I drink cold milk.",
           "exampleZh": "我喝凉牛奶。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F95B"
         },
         {
           "id": "water",
@@ -304,7 +492,8 @@
           "emoji": "💧",
           "exampleEn": "I drink clean water.",
           "exampleZh": "我喝干净的水。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F4A7"
         },
         {
           "id": "juice",
@@ -313,7 +502,8 @@
           "emoji": "🧃",
           "exampleEn": "I drink apple juice.",
           "exampleZh": "我喝苹果汁。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9C3"
         },
         {
           "id": "soup",
@@ -322,7 +512,8 @@
           "emoji": "🥣",
           "exampleEn": "The soup is hot.",
           "exampleZh": "汤是热的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F963"
         },
         {
           "id": "meat",
@@ -331,7 +522,8 @@
           "emoji": "🍖",
           "exampleEn": "I eat a little meat.",
           "exampleZh": "我吃一点肉。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F356"
         },
         {
           "id": "chicken",
@@ -340,7 +532,8 @@
           "emoji": "🍗",
           "exampleEn": "I eat chicken for dinner.",
           "exampleZh": "晚饭我吃鸡肉。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F357"
         },
         {
           "id": "porridge",
@@ -349,7 +542,8 @@
           "emoji": "🥣",
           "exampleEn": "I eat warm porridge.",
           "exampleZh": "我喝热粥。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F963"
         },
         {
           "id": "dumpling",
@@ -358,7 +552,8 @@
           "emoji": "🥟",
           "exampleEn": "I like pork dumplings.",
           "exampleZh": "我喜欢猪肉饺子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F95F"
         },
         {
           "id": "cookie",
@@ -367,16 +562,18 @@
           "emoji": "🍪",
           "exampleEn": "I want one cookie.",
           "exampleZh": "我要一块饼干。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F36A"
         },
         {
           "id": "yogurt",
           "english": "Yogurt",
           "chinese": "酸奶",
-          "emoji": "🍦",
+          "emoji": "",
           "exampleEn": "I eat sweet yogurt.",
           "exampleZh": "我吃甜酸奶。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "vegetable",
@@ -385,16 +582,18 @@
           "emoji": "🥦",
           "exampleEn": "I eat green vegetables.",
           "exampleZh": "我吃绿色蔬菜。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F966"
         },
         {
           "id": "tofu",
           "english": "Tofu",
           "chinese": "豆腐",
-          "emoji": "🍲",
+          "emoji": "",
           "exampleEn": "Tofu is soft and white.",
           "exampleZh": "豆腐又软又白。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "bun",
@@ -403,7 +602,8 @@
           "emoji": "🥟",
           "exampleEn": "I hold a warm bun.",
           "exampleZh": "我拿着热包子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F95F"
         },
         {
           "id": "chopsticks",
@@ -412,9 +612,11 @@
           "emoji": "🥢",
           "exampleEn": "I try the chopsticks.",
           "exampleZh": "我试试用筷子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F962"
         }
-      ]
+      ],
+      "image": "om-1F35A"
     },
     {
       "id": "fruit",
@@ -431,7 +633,8 @@
           "emoji": "🍎",
           "exampleEn": "I like red apples.",
           "exampleZh": "我喜欢红苹果。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F34E"
         },
         {
           "id": "banana",
@@ -440,7 +643,8 @@
           "emoji": "🍌",
           "exampleEn": "I peel a yellow banana.",
           "exampleZh": "我剥一根黄香蕉。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F34C"
         },
         {
           "id": "orange",
@@ -449,7 +653,8 @@
           "emoji": "🍊",
           "exampleEn": "The orange is very juicy.",
           "exampleZh": "橙子很多汁。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F34A"
         },
         {
           "id": "grape",
@@ -458,7 +663,8 @@
           "emoji": "🍇",
           "exampleEn": "I eat purple grapes.",
           "exampleZh": "我吃紫葡萄。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F347"
         },
         {
           "id": "watermelon",
@@ -467,7 +673,8 @@
           "emoji": "🍉",
           "exampleEn": "Watermelon is cold and sweet.",
           "exampleZh": "西瓜又凉又甜。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F349"
         },
         {
           "id": "strawberry",
@@ -476,7 +683,8 @@
           "emoji": "🍓",
           "exampleEn": "I see a red strawberry.",
           "exampleZh": "我看见一颗红草莓。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F353"
         },
         {
           "id": "pear",
@@ -485,7 +693,8 @@
           "emoji": "🍐",
           "exampleEn": "I bite a yellow pear.",
           "exampleZh": "我咬一口黄梨。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F350"
         },
         {
           "id": "peach",
@@ -494,7 +703,8 @@
           "emoji": "🍑",
           "exampleEn": "The peach is soft.",
           "exampleZh": "桃子软软的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F351"
         },
         {
           "id": "mango",
@@ -503,7 +713,8 @@
           "emoji": "🥭",
           "exampleEn": "Mango is sweet and yellow.",
           "exampleZh": "芒果又甜又黄。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F96D"
         },
         {
           "id": "kiwi",
@@ -512,7 +723,8 @@
           "emoji": "🥝",
           "exampleEn": "Kiwi is green inside.",
           "exampleZh": "猕猴桃里面是绿的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F95D"
         },
         {
           "id": "lemon",
@@ -521,7 +733,8 @@
           "emoji": "🍋",
           "exampleEn": "Lemon tastes very sour.",
           "exampleZh": "柠檬很酸。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F34B"
         },
         {
           "id": "cherry",
@@ -530,7 +743,8 @@
           "emoji": "🍒",
           "exampleEn": "I see two red cherries.",
           "exampleZh": "我看见两颗红樱桃。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F352"
         },
         {
           "id": "blueberry",
@@ -539,7 +753,8 @@
           "emoji": "🫐",
           "exampleEn": "Blueberries are small and round.",
           "exampleZh": "蓝莓又小又圆。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1FAD0"
         },
         {
           "id": "pineapple",
@@ -548,7 +763,8 @@
           "emoji": "🍍",
           "exampleEn": "Pineapple is sweet and spiky.",
           "exampleZh": "菠萝又甜又扎手。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F34D"
         },
         {
           "id": "coconut",
@@ -557,18 +773,21 @@
           "emoji": "🥥",
           "exampleEn": "Coconut water is sweet.",
           "exampleZh": "椰子水是甜的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F965"
         },
         {
           "id": "plum",
           "english": "Plum",
           "chinese": "李子",
-          "emoji": "🍑",
+          "emoji": "",
           "exampleEn": "I eat a purple plum.",
           "exampleZh": "我吃一颗紫李子。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         }
-      ]
+      ],
+      "image": "om-1F34E"
     },
     {
       "id": "animals",
@@ -585,7 +804,8 @@
           "emoji": "🐶",
           "exampleEn": "The dog wags its tail.",
           "exampleZh": "小狗摇尾巴。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F436"
         },
         {
           "id": "cat",
@@ -594,7 +814,8 @@
           "emoji": "🐱",
           "exampleEn": "The cat sits down.",
           "exampleZh": "小猫坐下了。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F431"
         },
         {
           "id": "bird",
@@ -603,7 +824,8 @@
           "emoji": "🐦",
           "exampleEn": "The bird can fly.",
           "exampleZh": "小鸟会飞。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F426"
         },
         {
           "id": "fish",
@@ -612,7 +834,8 @@
           "emoji": "🐟",
           "exampleEn": "The fish swims fast.",
           "exampleZh": "小鱼游得快。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F41F"
         },
         {
           "id": "rabbit",
@@ -621,7 +844,8 @@
           "emoji": "🐰",
           "exampleEn": "The rabbit has long ears.",
           "exampleZh": "兔子耳朵长长的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F430"
         },
         {
           "id": "duck",
@@ -630,7 +854,8 @@
           "emoji": "🦆",
           "exampleEn": "The duck says quack.",
           "exampleZh": "鸭子嘎嘎叫。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F986"
         },
         {
           "id": "pig",
@@ -639,7 +864,8 @@
           "emoji": "🐷",
           "exampleEn": "The pig is pink.",
           "exampleZh": "小猪是粉色的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F437"
         },
         {
           "id": "cow",
@@ -648,7 +874,8 @@
           "emoji": "🐮",
           "exampleEn": "The cow eats grass.",
           "exampleZh": "奶牛吃草。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F42E"
         },
         {
           "id": "horse",
@@ -657,7 +884,8 @@
           "emoji": "🐴",
           "exampleEn": "The horse runs fast.",
           "exampleZh": "马跑得很快。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F434"
         },
         {
           "id": "sheep",
@@ -666,7 +894,8 @@
           "emoji": "🐑",
           "exampleEn": "The sheep has soft wool.",
           "exampleZh": "羊有软软的毛。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F411"
         },
         {
           "id": "bear",
@@ -675,7 +904,8 @@
           "emoji": "🐻",
           "exampleEn": "The bear is big.",
           "exampleZh": "熊很大。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F43B"
         },
         {
           "id": "monkey",
@@ -684,7 +914,8 @@
           "emoji": "🐵",
           "exampleEn": "The monkey climbs up.",
           "exampleZh": "猴子爬上去。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F435"
         },
         {
           "id": "tiger",
@@ -693,7 +924,8 @@
           "emoji": "🐯",
           "exampleEn": "The tiger has stripes.",
           "exampleZh": "老虎有条纹。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F42F"
         },
         {
           "id": "elephant",
@@ -702,7 +934,8 @@
           "emoji": "🐘",
           "exampleEn": "The elephant has a trunk.",
           "exampleZh": "大象有长鼻子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F418"
         },
         {
           "id": "panda",
@@ -711,7 +944,8 @@
           "emoji": "🐼",
           "exampleEn": "The panda eats bamboo.",
           "exampleZh": "熊猫吃竹子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F43C"
         },
         {
           "id": "frog",
@@ -720,7 +954,8 @@
           "emoji": "🐸",
           "exampleEn": "The frog jumps high.",
           "exampleZh": "青蛙跳得高。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F438"
         },
         {
           "id": "bee",
@@ -729,7 +964,8 @@
           "emoji": "🐝",
           "exampleEn": "The bee likes flowers.",
           "exampleZh": "蜜蜂喜欢花。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F41D"
         },
         {
           "id": "butterfly",
@@ -738,9 +974,11 @@
           "emoji": "🦋",
           "exampleEn": "The butterfly has bright wings.",
           "exampleZh": "蝴蝶翅膀亮亮的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F98B"
         }
-      ]
+      ],
+      "image": "om-1F436"
     },
     {
       "id": "colors",
@@ -757,7 +995,8 @@
           "emoji": "🔴",
           "exampleEn": "I see a red ball.",
           "exampleZh": "我看见一个红球。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F534"
         },
         {
           "id": "blue",
@@ -766,7 +1005,8 @@
           "emoji": "🔵",
           "exampleEn": "The sky is blue.",
           "exampleZh": "天空是蓝色的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F535"
         },
         {
           "id": "yellow",
@@ -775,7 +1015,8 @@
           "emoji": "🟡",
           "exampleEn": "The sun looks yellow.",
           "exampleZh": "太阳看起来黄黄的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F7E1"
         },
         {
           "id": "green",
@@ -784,7 +1025,8 @@
           "emoji": "🟢",
           "exampleEn": "The grass is green.",
           "exampleZh": "草是绿色的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F7E2"
         },
         {
           "id": "orange-color",
@@ -793,7 +1035,8 @@
           "emoji": "🟠",
           "exampleEn": "The fruit is orange.",
           "exampleZh": "这个水果是橙色的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F7E0"
         },
         {
           "id": "purple",
@@ -802,7 +1045,8 @@
           "emoji": "🟣",
           "exampleEn": "I like purple flowers.",
           "exampleZh": "我喜欢紫色的花。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F7E3"
         },
         {
           "id": "pink",
@@ -811,7 +1055,8 @@
           "emoji": "🩷",
           "exampleEn": "The hat is pink.",
           "exampleZh": "帽子是粉色的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1FA77"
         },
         {
           "id": "black",
@@ -820,7 +1065,8 @@
           "emoji": "⚫",
           "exampleEn": "The cat is black.",
           "exampleZh": "这只猫是黑的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-26AB"
         },
         {
           "id": "white",
@@ -829,7 +1075,8 @@
           "emoji": "⚪",
           "exampleEn": "The cloud is white.",
           "exampleZh": "云是白色的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-26AA"
         },
         {
           "id": "brown",
@@ -838,7 +1085,8 @@
           "emoji": "🟤",
           "exampleEn": "The bear is brown.",
           "exampleZh": "熊是棕色的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F7E4"
         },
         {
           "id": "gray",
@@ -847,16 +1095,18 @@
           "emoji": "🩶",
           "exampleEn": "The stone is gray.",
           "exampleZh": "石头是灰色的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1FA76"
         },
         {
           "id": "gold",
           "english": "Gold",
           "chinese": "金色",
-          "emoji": "🌟",
+          "emoji": "",
           "exampleEn": "The star looks gold.",
           "exampleZh": "星星看起来金黄金黄。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "colorful",
@@ -865,7 +1115,8 @@
           "emoji": "🎨",
           "exampleEn": "The picture is colorful.",
           "exampleZh": "这幅画是彩色的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F3A8"
         },
         {
           "id": "rainbow",
@@ -874,7 +1125,8 @@
           "emoji": "🌈",
           "exampleEn": "I see a bright rainbow.",
           "exampleZh": "我看见一道亮彩虹。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F308"
         },
         {
           "id": "dark",
@@ -883,7 +1135,8 @@
           "emoji": "🌑",
           "exampleEn": "The night is dark.",
           "exampleZh": "夜晚黑黑的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F311"
         },
         {
           "id": "light-color",
@@ -892,9 +1145,11 @@
           "emoji": "🌤️",
           "exampleEn": "This blue is very light.",
           "exampleZh": "这个蓝很浅。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F324"
         }
-      ]
+      ],
+      "image": "om-1F3A8"
     },
     {
       "id": "numbers",
@@ -911,7 +1166,8 @@
           "emoji": "1️⃣",
           "exampleEn": "I have one apple.",
           "exampleZh": "我有一个苹果。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-0031-FE0F-20E3"
         },
         {
           "id": "two",
@@ -920,7 +1176,8 @@
           "emoji": "2️⃣",
           "exampleEn": "I see two birds.",
           "exampleZh": "我看见两只鸟。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-0032-FE0F-20E3"
         },
         {
           "id": "three",
@@ -929,7 +1186,8 @@
           "emoji": "3️⃣",
           "exampleEn": "I count to three.",
           "exampleZh": "我数到三。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-0033-FE0F-20E3"
         },
         {
           "id": "four",
@@ -938,7 +1196,8 @@
           "emoji": "4️⃣",
           "exampleEn": "The dog has four legs.",
           "exampleZh": "狗有四条腿。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-0034-FE0F-20E3"
         },
         {
           "id": "five",
@@ -947,7 +1206,8 @@
           "emoji": "5️⃣",
           "exampleEn": "I show five fingers.",
           "exampleZh": "我伸出五根手指。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-0035-FE0F-20E3"
         },
         {
           "id": "six",
@@ -956,7 +1216,8 @@
           "emoji": "6️⃣",
           "exampleEn": "I see six ducks.",
           "exampleZh": "我看见六只鸭子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-0036-FE0F-20E3"
         },
         {
           "id": "seven",
@@ -965,7 +1226,8 @@
           "emoji": "7️⃣",
           "exampleEn": "Seven stars shine above.",
           "exampleZh": "上面有七颗星。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-0037-FE0F-20E3"
         },
         {
           "id": "eight",
@@ -974,7 +1236,8 @@
           "emoji": "8️⃣",
           "exampleEn": "I have eight blocks.",
           "exampleZh": "我有八块积木。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-0038-FE0F-20E3"
         },
         {
           "id": "nine",
@@ -983,7 +1246,8 @@
           "emoji": "9️⃣",
           "exampleEn": "Nine flowers are red.",
           "exampleZh": "九朵花是红的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-0039-FE0F-20E3"
         },
         {
           "id": "ten",
@@ -992,9 +1256,11 @@
           "emoji": "🔟",
           "exampleEn": "I can count to ten.",
           "exampleZh": "我能数到十。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F51F"
         }
-      ]
+      ],
+      "image": "om-1F522"
     },
     {
       "id": "body",
@@ -1011,7 +1277,8 @@
           "emoji": "🗣️",
           "exampleEn": "I nod my head.",
           "exampleZh": "我点点头。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F5E3"
         },
         {
           "id": "hair",
@@ -1020,7 +1287,8 @@
           "emoji": "💇",
           "exampleEn": "My hair is short.",
           "exampleZh": "我的头发短短的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F487"
         },
         {
           "id": "eye",
@@ -1029,7 +1297,8 @@
           "emoji": "👁️",
           "exampleEn": "I close my eyes.",
           "exampleZh": "我闭上眼睛。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F441"
         },
         {
           "id": "ear",
@@ -1038,7 +1307,8 @@
           "emoji": "👂",
           "exampleEn": "I hear with my ears.",
           "exampleZh": "我用耳朵听。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F442"
         },
         {
           "id": "nose",
@@ -1047,7 +1317,8 @@
           "emoji": "👃",
           "exampleEn": "I smell with my nose.",
           "exampleZh": "我用鼻子闻。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F443"
         },
         {
           "id": "mouth",
@@ -1056,7 +1327,8 @@
           "emoji": "👄",
           "exampleEn": "I open my mouth.",
           "exampleZh": "我张开嘴巴。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F444"
         },
         {
           "id": "tooth",
@@ -1065,7 +1337,8 @@
           "emoji": "🦷",
           "exampleEn": "I brush my teeth.",
           "exampleZh": "我刷我的牙。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9B7"
         },
         {
           "id": "hand",
@@ -1074,7 +1347,8 @@
           "emoji": "✋",
           "exampleEn": "I wash my hands.",
           "exampleZh": "我洗我的手。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-270B"
         },
         {
           "id": "finger",
@@ -1083,7 +1357,8 @@
           "emoji": "👆",
           "exampleEn": "I point one finger.",
           "exampleZh": "我伸出一根手指。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F446"
         },
         {
           "id": "arm",
@@ -1092,7 +1367,8 @@
           "emoji": "💪",
           "exampleEn": "I lift my arms.",
           "exampleZh": "我举起胳膊。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F4AA"
         },
         {
           "id": "leg",
@@ -1101,7 +1377,8 @@
           "emoji": "🦵",
           "exampleEn": "I stretch my legs.",
           "exampleZh": "我伸伸腿。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9B5"
         },
         {
           "id": "foot",
@@ -1110,7 +1387,8 @@
           "emoji": "🦶",
           "exampleEn": "I stamp my foot.",
           "exampleZh": "我跺跺脚。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9B6"
         },
         {
           "id": "knee",
@@ -1119,16 +1397,18 @@
           "emoji": "🦵",
           "exampleEn": "I bend my knees.",
           "exampleZh": "我弯弯膝盖。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9B5"
         },
         {
           "id": "tummy",
           "english": "Tummy",
           "chinese": "肚子",
-          "emoji": "⭕",
+          "emoji": "",
           "exampleEn": "My tummy is full.",
           "exampleZh": "我的肚子饱了。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "back",
@@ -1137,18 +1417,21 @@
           "emoji": "🧍",
           "exampleEn": "I pat your back.",
           "exampleZh": "我拍拍你的背。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9CD"
         },
         {
           "id": "shoulder",
           "english": "Shoulder",
           "chinese": "肩膀",
-          "emoji": "🤷",
+          "emoji": "",
           "exampleEn": "The bag sits on my shoulder.",
           "exampleZh": "包在我肩膀上。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         }
-      ]
+      ],
+      "image": "om-1F44B"
     },
     {
       "id": "clothes",
@@ -1165,7 +1448,8 @@
           "emoji": "👕",
           "exampleEn": "I put on my shirt.",
           "exampleZh": "我穿上上衣。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F455"
         },
         {
           "id": "pants",
@@ -1174,7 +1458,8 @@
           "emoji": "👖",
           "exampleEn": "I put on my pants.",
           "exampleZh": "我穿上裤子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F456"
         },
         {
           "id": "dress",
@@ -1183,7 +1468,8 @@
           "emoji": "👗",
           "exampleEn": "The dress is red.",
           "exampleZh": "裙子是红色的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F457"
         },
         {
           "id": "shoes",
@@ -1192,7 +1478,8 @@
           "emoji": "👟",
           "exampleEn": "I tie my shoes.",
           "exampleZh": "我系上鞋子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F45F"
         },
         {
           "id": "socks",
@@ -1201,7 +1488,8 @@
           "emoji": "🧦",
           "exampleEn": "My socks are dry.",
           "exampleZh": "我的袜子是干的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9E6"
         },
         {
           "id": "hat",
@@ -1210,7 +1498,8 @@
           "emoji": "🧢",
           "exampleEn": "I wear a sun hat.",
           "exampleZh": "我戴太阳帽。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9E2"
         },
         {
           "id": "coat",
@@ -1219,7 +1508,8 @@
           "emoji": "🧥",
           "exampleEn": "I zip my coat.",
           "exampleZh": "我拉上外套拉链。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9E5"
         },
         {
           "id": "jacket",
@@ -1228,7 +1518,8 @@
           "emoji": "🧥",
           "exampleEn": "My jacket is blue.",
           "exampleZh": "我的夹克是蓝的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9E5"
         },
         {
           "id": "skirt",
@@ -1237,34 +1528,38 @@
           "emoji": "👗",
           "exampleEn": "The skirt is short.",
           "exampleZh": "短裙很短。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F457"
         },
         {
           "id": "sweater",
           "english": "Sweater",
           "chinese": "毛衣",
-          "emoji": "🧶",
+          "emoji": "",
           "exampleEn": "The sweater feels warm.",
           "exampleZh": "毛衣暖暖的。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "pajamas",
           "english": "Pajamas",
           "chinese": "睡衣",
-          "emoji": "🛌",
+          "emoji": "",
           "exampleEn": "I wear soft pajamas.",
           "exampleZh": "我穿软软的睡衣。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "diaper",
           "english": "Diaper",
           "chinese": "尿布",
-          "emoji": "👶",
+          "emoji": "",
           "exampleEn": "We change the diaper.",
           "exampleZh": "我们换尿布。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "scarf",
@@ -1273,7 +1568,8 @@
           "emoji": "🧣",
           "exampleEn": "I wrap my scarf.",
           "exampleZh": "我围上围巾。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9E3"
         },
         {
           "id": "gloves",
@@ -1282,7 +1578,8 @@
           "emoji": "🧤",
           "exampleEn": "I wear warm gloves.",
           "exampleZh": "我戴暖手套。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9E4"
         },
         {
           "id": "boots",
@@ -1291,7 +1588,8 @@
           "emoji": "👢",
           "exampleEn": "My boots are muddy.",
           "exampleZh": "我的靴子有泥。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F462"
         },
         {
           "id": "button",
@@ -1300,9 +1598,11 @@
           "emoji": "🔘",
           "exampleEn": "I push the button through.",
           "exampleZh": "我把纽扣扣上。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F518"
         }
-      ]
+      ],
+      "image": "om-1F455"
     },
     {
       "id": "home",
@@ -1319,7 +1619,8 @@
           "emoji": "🛏️",
           "exampleEn": "I lie on the bed.",
           "exampleZh": "我躺在床上。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F6CF"
         },
         {
           "id": "chair",
@@ -1328,16 +1629,18 @@
           "emoji": "🪑",
           "exampleEn": "I sit on the chair.",
           "exampleZh": "我坐在椅子上。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1FA91"
         },
         {
           "id": "table",
           "english": "Table",
           "chinese": "桌子",
-          "emoji": "🪵",
+          "emoji": "",
           "exampleEn": "The cup is on the table.",
           "exampleZh": "杯子在桌子上。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "door",
@@ -1346,7 +1649,8 @@
           "emoji": "🚪",
           "exampleEn": "Please close the door.",
           "exampleZh": "请把门关上。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F6AA"
         },
         {
           "id": "window",
@@ -1355,7 +1659,8 @@
           "emoji": "🪟",
           "exampleEn": "I look out the window.",
           "exampleZh": "我看着窗外。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1FA9F"
         },
         {
           "id": "cup",
@@ -1364,7 +1669,8 @@
           "emoji": "🥤",
           "exampleEn": "I hold my cup.",
           "exampleZh": "我拿着杯子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F964"
         },
         {
           "id": "bowl",
@@ -1373,7 +1679,8 @@
           "emoji": "🥣",
           "exampleEn": "The rice is in the bowl.",
           "exampleZh": "米饭在碗里。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F963"
         },
         {
           "id": "spoon",
@@ -1382,7 +1689,8 @@
           "emoji": "🥄",
           "exampleEn": "I eat with a spoon.",
           "exampleZh": "我用勺子吃。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F944"
         },
         {
           "id": "light",
@@ -1391,7 +1699,8 @@
           "emoji": "💡",
           "exampleEn": "Please turn on the light.",
           "exampleZh": "请把灯打开。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F4A1"
         },
         {
           "id": "soap",
@@ -1400,25 +1709,28 @@
           "emoji": "🧼",
           "exampleEn": "I wash with soap.",
           "exampleZh": "我用肥皂洗。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9FC"
         },
         {
           "id": "towel",
           "english": "Towel",
           "chinese": "毛巾",
-          "emoji": "🧻",
+          "emoji": "",
           "exampleEn": "I dry with a towel.",
           "exampleZh": "我用毛巾擦干。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "pillow",
           "english": "Pillow",
           "chinese": "枕头",
-          "emoji": "🛌",
+          "emoji": "",
           "exampleEn": "My head rests on the pillow.",
           "exampleZh": "我的头靠着枕头。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "blanket",
@@ -1427,7 +1739,8 @@
           "emoji": "🛏️",
           "exampleEn": "I pull up the blanket.",
           "exampleZh": "我拉上被子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F6CF"
         },
         {
           "id": "clock",
@@ -1436,7 +1749,8 @@
           "emoji": "🕐",
           "exampleEn": "The clock says seven.",
           "exampleZh": "钟走到了七点。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F550"
         },
         {
           "id": "key",
@@ -1445,7 +1759,8 @@
           "emoji": "🔑",
           "exampleEn": "The key opens the door.",
           "exampleZh": "钥匙能开门。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F511"
         },
         {
           "id": "mirror",
@@ -1454,7 +1769,8 @@
           "emoji": "🪞",
           "exampleEn": "I look in the mirror.",
           "exampleZh": "我照照镜子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1FA9E"
         },
         {
           "id": "sofa",
@@ -1463,7 +1779,8 @@
           "emoji": "🛋️",
           "exampleEn": "We sit on the sofa.",
           "exampleZh": "我们坐在沙发上。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F6CB"
         },
         {
           "id": "lamp",
@@ -1472,9 +1789,11 @@
           "emoji": "🪔",
           "exampleEn": "The lamp is bright.",
           "exampleZh": "台灯亮亮的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1FA94"
         }
-      ]
+      ],
+      "image": "om-1F3E0"
     },
     {
       "id": "toys",
@@ -1491,7 +1810,8 @@
           "emoji": "⚽",
           "exampleEn": "I roll the ball.",
           "exampleZh": "我滚球。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-26BD"
         },
         {
           "id": "toy-car",
@@ -1500,16 +1820,18 @@
           "emoji": "🚗",
           "exampleEn": "I push the red car.",
           "exampleZh": "我推红色小汽车。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F697"
         },
         {
           "id": "doll",
           "english": "Doll",
           "chinese": "娃娃",
-          "emoji": "🧸",
+          "emoji": "",
           "exampleEn": "I hug my doll.",
           "exampleZh": "我抱抱娃娃。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "blocks",
@@ -1518,7 +1840,8 @@
           "emoji": "🧱",
           "exampleEn": "I stack the blocks.",
           "exampleZh": "我把积木搭高。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9F1"
         },
         {
           "id": "book",
@@ -1527,7 +1850,8 @@
           "emoji": "📚",
           "exampleEn": "We read a book.",
           "exampleZh": "我们读一本书。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F4DA"
         },
         {
           "id": "puzzle",
@@ -1536,7 +1860,8 @@
           "emoji": "🧩",
           "exampleEn": "I fit the puzzle piece.",
           "exampleZh": "我拼上一块拼图。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9E9"
         },
         {
           "id": "drum",
@@ -1545,7 +1870,8 @@
           "emoji": "🥁",
           "exampleEn": "I tap the drum.",
           "exampleZh": "我敲敲鼓。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F941"
         },
         {
           "id": "balloon",
@@ -1554,7 +1880,8 @@
           "emoji": "🎈",
           "exampleEn": "I hold the balloon string.",
           "exampleZh": "我抓住气球线。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F388"
         },
         {
           "id": "kite",
@@ -1563,7 +1890,8 @@
           "emoji": "🪁",
           "exampleEn": "The kite flies high.",
           "exampleZh": "风筝飞得高。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1FA81"
         },
         {
           "id": "teddy",
@@ -1572,7 +1900,8 @@
           "emoji": "🧸",
           "exampleEn": "Teddy sits on the bed.",
           "exampleZh": "泰迪熊坐在床上。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9F8"
         },
         {
           "id": "toy-train",
@@ -1581,7 +1910,8 @@
           "emoji": "🚂",
           "exampleEn": "The toy train goes around.",
           "exampleZh": "小火车转圈跑。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F682"
         },
         {
           "id": "robot",
@@ -1590,7 +1920,8 @@
           "emoji": "🤖",
           "exampleEn": "The robot waves hello.",
           "exampleZh": "机器人挥手说你好。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F916"
         },
         {
           "id": "crayon",
@@ -1599,7 +1930,8 @@
           "emoji": "🖍️",
           "exampleEn": "I draw with a crayon.",
           "exampleZh": "我用蜡笔画画。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F58D"
         },
         {
           "id": "bubbles",
@@ -1608,7 +1940,8 @@
           "emoji": "🫧",
           "exampleEn": "I blow big bubbles.",
           "exampleZh": "我吹大泡泡。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1FAE7"
         },
         {
           "id": "slide",
@@ -1617,18 +1950,21 @@
           "emoji": "🛝",
           "exampleEn": "I go down the slide.",
           "exampleZh": "我从滑梯滑下来。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F6DD"
         },
         {
           "id": "swing",
           "english": "Swing",
           "chinese": "秋千",
-          "emoji": "🎢",
+          "emoji": "",
           "exampleEn": "I sit on the swing.",
           "exampleZh": "我坐在秋千上。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         }
-      ]
+      ],
+      "image": "om-1F9F8"
     },
     {
       "id": "transport",
@@ -1645,7 +1981,8 @@
           "emoji": "🚗",
           "exampleEn": "We ride in the car.",
           "exampleZh": "我们坐汽车。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F697"
         },
         {
           "id": "bus",
@@ -1654,7 +1991,8 @@
           "emoji": "🚌",
           "exampleEn": "We wait for the bus.",
           "exampleZh": "我们等公共汽车。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F68C"
         },
         {
           "id": "bike",
@@ -1663,7 +2001,8 @@
           "emoji": "🚲",
           "exampleEn": "I ride a small bike.",
           "exampleZh": "我骑小自行车。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F6B2"
         },
         {
           "id": "passenger-train",
@@ -1672,7 +2011,8 @@
           "emoji": "🚆",
           "exampleEn": "The train stops here.",
           "exampleZh": "火车在这里停。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F686"
         },
         {
           "id": "plane",
@@ -1681,7 +2021,8 @@
           "emoji": "✈️",
           "exampleEn": "The plane flies away.",
           "exampleZh": "飞机飞走了。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-2708"
         },
         {
           "id": "ship",
@@ -1690,7 +2031,8 @@
           "emoji": "🚢",
           "exampleEn": "The ship is very big.",
           "exampleZh": "轮船很大。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F6A2"
         },
         {
           "id": "truck",
@@ -1699,7 +2041,8 @@
           "emoji": "🚚",
           "exampleEn": "The truck carries boxes.",
           "exampleZh": "卡车拉着箱子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F69A"
         },
         {
           "id": "taxi",
@@ -1708,7 +2051,8 @@
           "emoji": "🚕",
           "exampleEn": "We wave for a taxi.",
           "exampleZh": "我们招一辆出租车。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F695"
         },
         {
           "id": "metro",
@@ -1717,16 +2061,18 @@
           "emoji": "🚇",
           "exampleEn": "The metro goes underground.",
           "exampleZh": "地铁在地下跑。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F687"
         },
         {
           "id": "stroller",
           "english": "Stroller",
           "chinese": "推车",
-          "emoji": "🛒",
+          "emoji": "",
           "exampleEn": "Baby sits in the stroller.",
           "exampleZh": "宝宝坐在推车里。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "scooter",
@@ -1735,7 +2081,8 @@
           "emoji": "🛴",
           "exampleEn": "I kick the scooter forward.",
           "exampleZh": "我用脚蹬滑板车。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F6F4"
         },
         {
           "id": "motorcycle",
@@ -1744,7 +2091,8 @@
           "emoji": "🏍️",
           "exampleEn": "The motorcycle is loud.",
           "exampleZh": "摩托车声音很大。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F3CD"
         },
         {
           "id": "helicopter",
@@ -1753,7 +2101,8 @@
           "emoji": "🚁",
           "exampleEn": "The helicopter spins above.",
           "exampleZh": "直升机在上面转。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F681"
         },
         {
           "id": "tram",
@@ -1762,7 +2111,8 @@
           "emoji": "🚊",
           "exampleEn": "The tram runs on tracks.",
           "exampleZh": "电车沿着轨道走。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F68A"
         },
         {
           "id": "ferry",
@@ -1771,7 +2121,8 @@
           "emoji": "⛴️",
           "exampleEn": "The ferry crosses the river.",
           "exampleZh": "渡船开过河。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-26F4"
         },
         {
           "id": "ambulance",
@@ -1780,9 +2131,11 @@
           "emoji": "🚑",
           "exampleEn": "The ambulance helps people.",
           "exampleZh": "救护车帮助人们。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F691"
         }
-      ]
+      ],
+      "image": "om-1F68C"
     },
     {
       "id": "weather",
@@ -1799,7 +2152,8 @@
           "emoji": "☀️",
           "exampleEn": "The sun is bright.",
           "exampleZh": "太阳亮亮的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-2600"
         },
         {
           "id": "rain",
@@ -1808,7 +2162,8 @@
           "emoji": "🌧️",
           "exampleEn": "Rain falls on the window.",
           "exampleZh": "雨打在窗户上。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F327"
         },
         {
           "id": "cloud",
@@ -1817,7 +2172,8 @@
           "emoji": "☁️",
           "exampleEn": "A white cloud floats by.",
           "exampleZh": "一朵白云飘过去。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-2601"
         },
         {
           "id": "wind",
@@ -1826,7 +2182,8 @@
           "emoji": "💨",
           "exampleEn": "The wind blows my hat.",
           "exampleZh": "风吹走我的帽子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F4A8"
         },
         {
           "id": "snow",
@@ -1835,7 +2192,8 @@
           "emoji": "❄️",
           "exampleEn": "Snow is cold and white.",
           "exampleZh": "雪又冷又白。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-2744"
         },
         {
           "id": "hot",
@@ -1844,7 +2202,8 @@
           "emoji": "🥵",
           "exampleEn": "Today feels very hot.",
           "exampleZh": "今天很热。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F975"
         },
         {
           "id": "cold",
@@ -1853,7 +2212,8 @@
           "emoji": "🥶",
           "exampleEn": "Today feels very cold.",
           "exampleZh": "今天很冷。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F976"
         },
         {
           "id": "weather-rainbow",
@@ -1862,7 +2222,8 @@
           "emoji": "🌈",
           "exampleEn": "A rainbow comes after rain.",
           "exampleZh": "雨后出彩虹。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F308"
         },
         {
           "id": "umbrella",
@@ -1871,7 +2232,8 @@
           "emoji": "☂️",
           "exampleEn": "I open my umbrella.",
           "exampleZh": "我打开雨伞。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-2602"
         },
         {
           "id": "sky",
@@ -1880,7 +2242,8 @@
           "emoji": "🌌",
           "exampleEn": "The sky is very blue.",
           "exampleZh": "天空很蓝。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F30C"
         },
         {
           "id": "moon",
@@ -1889,7 +2252,8 @@
           "emoji": "🌙",
           "exampleEn": "The moon is out.",
           "exampleZh": "月亮出来了。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F319"
         },
         {
           "id": "star-sky",
@@ -1898,7 +2262,8 @@
           "emoji": "⭐",
           "exampleEn": "I see one bright star.",
           "exampleZh": "我看见一颗亮星。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-2B50"
         },
         {
           "id": "storm",
@@ -1907,7 +2272,8 @@
           "emoji": "⛈️",
           "exampleEn": "The storm is very loud.",
           "exampleZh": "暴风雨声音很大。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-26C8"
         },
         {
           "id": "fog",
@@ -1916,7 +2282,8 @@
           "emoji": "🌫️",
           "exampleEn": "Fog hides the trees.",
           "exampleZh": "雾挡住了树。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F32B"
         },
         {
           "id": "warm",
@@ -1925,7 +2292,8 @@
           "emoji": "🌤️",
           "exampleEn": "The sun feels warm.",
           "exampleZh": "太阳暖暖的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F324"
         },
         {
           "id": "ice",
@@ -1934,9 +2302,11 @@
           "emoji": "🧊",
           "exampleEn": "Ice is cold and hard.",
           "exampleZh": "冰又冷又硬。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9CA"
         }
-      ]
+      ],
+      "image": "om-2600"
     },
     {
       "id": "family",
@@ -1953,7 +2323,8 @@
           "emoji": "👩",
           "exampleEn": "Mom gives me a hug.",
           "exampleZh": "妈妈抱抱我。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F469"
         },
         {
           "id": "dad",
@@ -1962,7 +2333,8 @@
           "emoji": "👨",
           "exampleEn": "Dad holds my hand.",
           "exampleZh": "爸爸拉着我的手。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F468"
         },
         {
           "id": "grandma",
@@ -1971,7 +2343,8 @@
           "emoji": "👵",
           "exampleEn": "Grandma tells a story.",
           "exampleZh": "奶奶讲故事。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F475"
         },
         {
           "id": "grandpa",
@@ -1980,7 +2353,8 @@
           "emoji": "👴",
           "exampleEn": "Grandpa smiles at me.",
           "exampleZh": "爷爷对我笑。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F474"
         },
         {
           "id": "baby",
@@ -1989,7 +2363,8 @@
           "emoji": "👶",
           "exampleEn": "The baby is sleeping.",
           "exampleZh": "宝宝在睡觉。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F476"
         },
         {
           "id": "sister",
@@ -1998,7 +2373,8 @@
           "emoji": "👧",
           "exampleEn": "My sister reads with me.",
           "exampleZh": "姐姐和我一起读书。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F467"
         },
         {
           "id": "brother",
@@ -2007,7 +2383,8 @@
           "emoji": "👦",
           "exampleEn": "My brother plays cars.",
           "exampleZh": "哥哥玩小汽车。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F466"
         },
         {
           "id": "family-word",
@@ -2016,7 +2393,8 @@
           "emoji": "👨‍👩‍👧",
           "exampleEn": "I love my family.",
           "exampleZh": "我爱我的家人。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F468-200D-1F469-200D-1F467"
         },
         {
           "id": "auntie",
@@ -2025,7 +2403,8 @@
           "emoji": "👩",
           "exampleEn": "Auntie comes to visit.",
           "exampleZh": "阿姨来看我们。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F469"
         },
         {
           "id": "uncle",
@@ -2034,7 +2413,8 @@
           "emoji": "👨",
           "exampleEn": "Uncle waves at the door.",
           "exampleZh": "叔叔在门口挥手。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F468"
         },
         {
           "id": "cousin",
@@ -2043,7 +2423,8 @@
           "emoji": "🧒",
           "exampleEn": "My cousin plays with me.",
           "exampleZh": "表哥和我一起玩。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9D2"
         },
         {
           "id": "me",
@@ -2052,7 +2433,8 @@
           "emoji": "🙂",
           "exampleEn": "This toy is for me.",
           "exampleZh": "这个玩具是给我的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F642"
         },
         {
           "id": "friend",
@@ -2061,16 +2443,18 @@
           "emoji": "🤝",
           "exampleEn": "My friend shares a book.",
           "exampleZh": "朋友和我一起看书。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F91D"
         },
         {
           "id": "guest",
           "english": "Guest",
           "chinese": "客人",
-          "emoji": "🛎️",
+          "emoji": "",
           "exampleEn": "A guest comes today.",
           "exampleZh": "今天有客人来。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "we",
@@ -2079,9 +2463,11 @@
           "emoji": "👨‍👩‍👧‍👦",
           "exampleEn": "We eat lunch together.",
           "exampleZh": "我们一起吃午饭。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F468-200D-1F469-200D-1F467-200D-1F466"
         }
-      ]
+      ],
+      "image": "om-1F468-200D-1F469-200D-1F467"
     },
     {
       "id": "actions",
@@ -2098,7 +2484,8 @@
           "emoji": "🍽️",
           "exampleEn": "I eat my lunch.",
           "exampleZh": "我吃午饭。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F37D"
         },
         {
           "id": "drink",
@@ -2107,7 +2494,8 @@
           "emoji": "🥤",
           "exampleEn": "I drink some water.",
           "exampleZh": "我喝一点水。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F964"
         },
         {
           "id": "sleep",
@@ -2116,7 +2504,8 @@
           "emoji": "😴",
           "exampleEn": "I sleep in my bed.",
           "exampleZh": "我在床上睡觉。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F634"
         },
         {
           "id": "walk",
@@ -2125,7 +2514,8 @@
           "emoji": "🚶",
           "exampleEn": "We walk to the park.",
           "exampleZh": "我们走到公园。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F6B6"
         },
         {
           "id": "run",
@@ -2134,7 +2524,8 @@
           "emoji": "🏃",
           "exampleEn": "I run on the grass.",
           "exampleZh": "我在草地上跑。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F3C3"
         },
         {
           "id": "sit",
@@ -2143,7 +2534,8 @@
           "emoji": "🪑",
           "exampleEn": "Please sit down here.",
           "exampleZh": "请坐在这里。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1FA91"
         },
         {
           "id": "stand",
@@ -2152,7 +2544,8 @@
           "emoji": "🧍",
           "exampleEn": "I stand up tall.",
           "exampleZh": "我站得高高的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9CD"
         },
         {
           "id": "wash",
@@ -2161,7 +2554,8 @@
           "emoji": "🧼",
           "exampleEn": "I wash my hands.",
           "exampleZh": "我洗我的手。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F9FC"
         },
         {
           "id": "open",
@@ -2170,16 +2564,18 @@
           "emoji": "📂",
           "exampleEn": "I open the box.",
           "exampleZh": "我打开盒子。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F4C2"
         },
         {
           "id": "close",
           "english": "Close",
           "chinese": "关上",
-          "emoji": "📁",
+          "emoji": "",
           "exampleEn": "Please close the door.",
           "exampleZh": "请把门关上。",
-          "ipa": ""
+          "ipa": "",
+          "image": ""
         },
         {
           "id": "look",
@@ -2188,7 +2584,8 @@
           "emoji": "👀",
           "exampleEn": "Look at the bird.",
           "exampleZh": "看那只鸟。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F440"
         },
         {
           "id": "listen",
@@ -2197,7 +2594,8 @@
           "emoji": "👂",
           "exampleEn": "I listen to the song.",
           "exampleZh": "我听这首歌。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F442"
         },
         {
           "id": "come",
@@ -2206,7 +2604,8 @@
           "emoji": "👋",
           "exampleEn": "Please come here now.",
           "exampleZh": "请现在过来。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F44B"
         },
         {
           "id": "go",
@@ -2215,7 +2614,8 @@
           "emoji": "➡️",
           "exampleEn": "We go to the park.",
           "exampleZh": "我们去公园。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-27A1"
         },
         {
           "id": "play",
@@ -2224,7 +2624,8 @@
           "emoji": "🎲",
           "exampleEn": "We play with blocks.",
           "exampleZh": "我们玩积木。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F3B2"
         },
         {
           "id": "stop",
@@ -2233,7 +2634,8 @@
           "emoji": "🛑",
           "exampleEn": "Please stop and wait.",
           "exampleZh": "请停下来等一等。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F6D1"
         },
         {
           "id": "hug",
@@ -2242,7 +2644,8 @@
           "emoji": "🤗",
           "exampleEn": "I hug my mom.",
           "exampleZh": "我抱抱妈妈。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F917"
         },
         {
           "id": "clap",
@@ -2251,7 +2654,8 @@
           "emoji": "👏",
           "exampleEn": "We clap our hands.",
           "exampleZh": "我们拍拍手。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F44F"
         },
         {
           "id": "jump",
@@ -2260,7 +2664,8 @@
           "emoji": "🤸",
           "exampleEn": "I jump up high.",
           "exampleZh": "我跳得高高的。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F938"
         },
         {
           "id": "read",
@@ -2269,9 +2674,11 @@
           "emoji": "📖",
           "exampleEn": "We read one book.",
           "exampleZh": "我们读一本书。",
-          "ipa": ""
+          "ipa": "",
+          "image": "om-1F4D6"
         }
-      ]
+      ],
+      "image": "om-1F3C3"
     }
   ]
 }

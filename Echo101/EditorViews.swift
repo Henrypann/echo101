@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import ImageIO
 import EchoCore
 
 enum WordsRoute: Hashable {
@@ -47,10 +49,7 @@ struct CategoryPage: View {
                                     .foregroundStyle(EchoStyle.textSecondary)
                             }
                             Spacer()
-                            Image(systemName: "map")
-                                .font(.system(size: 44))
-                                .frame(width: 44, height: 44)
-                                .foregroundStyle(EchoStyle.accent)
+                            VocabularyPicture(name: pinned.image, emoji: pinned.emoji.isEmpty ? "🗺️" : pinned.emoji, side: 72, fills: true, corner: 12)
                         }
                         .padding(.horizontal, 16)
                         .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
@@ -86,9 +85,7 @@ struct CategoryPage: View {
         let total = category.words.count
         let ratio = total == 0 ? 0 : CGFloat(done) / CGFloat(total)
         return VStack(alignment: .leading, spacing: 6) {
-            Text(category.emoji.isEmpty ? "📘" : category.emoji)
-                .font(.system(size: 44))
-                .frame(height: 44, alignment: .leading)
+            VocabularyPicture(name: category.image, emoji: category.emoji.isEmpty ? "📘" : category.emoji, side: 44, fills: false, corner: 8)
             Text(category.chinese)
                 .font(.system(size: 24, weight: .semibold))
                 .foregroundStyle(Color.black)
@@ -137,6 +134,9 @@ struct WordListPage: View {
                             Task { @MainActor in model.playWord(spoken) }
                         } label: {
                             HStack(spacing: 12) {
+                                if !word.image.isEmpty || !word.emoji.isEmpty {
+                                    VocabularyPicture(name: word.image, emoji: word.emoji, side: 64, fills: word.credit != nil, corner: 12)
+                                }
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(word.english)
                                         .font(.system(size: 28, weight: .semibold))
@@ -196,8 +196,8 @@ struct WordDetailPage: View {
         ScrollView {
             if let (category, word) = located {
                 VStack(spacing: 16) {
-                    if !word.emoji.isEmpty {
-                        Text(word.emoji).font(.system(size: 64))
+                    if !word.image.isEmpty || !word.emoji.isEmpty {
+                        VocabularyPicture(name: word.image, emoji: word.emoji, side: word.credit == nil ? 180 : nil, height: 180, fills: word.credit != nil, corner: 16)
                     }
                     if store.repeatedWordIDs.contains(word.id) {
                         Image(systemName: "star.fill").foregroundStyle(EchoStyle.accent).frame(maxWidth: .infinity, alignment: .trailing)
@@ -253,5 +253,82 @@ struct WordDetailPage: View {
         }
         if !path.isEmpty { path.removeLast() }
         path.append(.word(category.words[next].id))
+    }
+}
+
+/// Bundled vocabulary art. Decoding happens off the tap path so playback is not waiting on the picture.
+struct VocabularyPicture: View {
+    var name: String
+    var emoji: String
+    var side: CGFloat?
+    var height: CGFloat?
+    var fills: Bool
+    var corner: CGFloat
+    @State private var image: UIImage?
+    @State private var failed = false
+
+    var body: some View {
+        let boxHeight = height ?? side ?? 64
+        let boxWidth = side
+        Color.clear
+            .frame(width: boxWidth, height: boxHeight)
+            .frame(maxWidth: fills && boxWidth == nil ? .infinity : nil)
+            .frame(height: boxHeight)
+            .overlay {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: fills ? .fill : .fit)
+                } else if failed && !emoji.isEmpty {
+                    Text(emoji)
+                        .font(.system(size: min(64, max(20, boxHeight))))
+                } else if !name.isEmpty {
+                    Color(white: 0.94)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
+            .accessibilityHidden(true)
+        .task(id: name) {
+            let pixels = max(boxHeight, boxWidth ?? boxHeight) * 3
+            let loaded = await VocabularyPictureLoader.image(named: name, maxPixel: pixels)
+            image = loaded
+            failed = loaded == nil
+        }
+    }
+}
+
+private struct LoadedPicture: @unchecked Sendable {
+    let image: UIImage
+}
+
+@MainActor
+private enum VocabularyPictureLoader {
+    private static let cache: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.countLimit = 80
+        return cache
+    }()
+
+    static func image(named name: String, maxPixel: CGFloat) async -> UIImage? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let key = "\(trimmed)@\(Int(maxPixel.rounded()))" as NSString
+        if let cached = cache.object(forKey: key) { return cached }
+        let pixels = max(48, maxPixel)
+        let loaded = await Task.detached(priority: .userInitiated) { () -> LoadedPicture? in
+            guard let url = VocabularyImages.resourceURL(named: trimmed) else { return nil }
+            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+            let options: [CFString: Any] = [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: Int(pixels.rounded()),
+                kCGImageSourceShouldCacheImmediately: true
+            ]
+            guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+            return LoadedPicture(image: UIImage(cgImage: cgImage))
+        }.value
+        guard let loaded else { return nil }
+        cache.setObject(loaded.image, forKey: key)
+        return loaded.image
     }
 }

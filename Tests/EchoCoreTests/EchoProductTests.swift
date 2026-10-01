@@ -37,6 +37,45 @@ struct EchoProductTests {
         }
     }
 
+    @Test func vocabularyImagesResolveAndHangzhouPhotosAreAttributed() throws {
+        let catalog = try VocabularyCatalog.load()
+        let textOnly: Set<String> = [
+            "plum", "yogurt", "tofu", "tummy", "shoulder", "sweater", "pajamas", "pillow",
+            "diaper", "table", "towel", "doll", "swing", "stroller", "close", "guest", "gold"
+        ]
+        var pictured = 0
+        var hangzhouPhotos = 0
+        var plain = 0
+        for category in catalog.categories {
+            if !category.image.isEmpty {
+                #expect(VocabularyImages.resourceURL(named: category.image) != nil)
+            }
+            for word in category.words {
+                if category.id != "hangzhou" { #expect(word.credit == nil) }
+                if textOnly.contains(word.id) {
+                    #expect(word.image.isEmpty)
+                    #expect(word.emoji.isEmpty)
+                    plain += 1
+                    continue
+                }
+                #expect(!word.image.isEmpty)
+                pictured += 1
+                #expect(VocabularyImages.resourceURL(named: word.image) != nil)
+                guard category.id == "hangzhou" else { continue }
+                hangzhouPhotos += 1
+                let credit = try #require(word.credit)
+                #expect(!credit.author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                #expect(!credit.license.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                #expect(credit.licenseURL.hasPrefix("https://"))
+                #expect(credit.sourceURL.hasPrefix("https://commons.wikimedia.org/"))
+            }
+        }
+        #expect(plain == textOnly.count)
+        #expect(pictured == 220)
+        #expect(hangzhouPhotos == 26)
+        #expect(VocabularyImages.openMojiAttribution.contains("CC BY-SA 4.0"))
+    }
+
     @Test func seedLibraryIsOriginalEverydaySpeech() {
         let phrases = SeedLibrary.make()
         #expect(phrases.count >= 50)

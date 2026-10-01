@@ -38,6 +38,7 @@ struct ParentHome: View {
     @State private var editing: SpokenRecord?
     @State private var editingPhrase: LibraryPhrase?
     @State private var message = ""
+    @State private var showCredits = false
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 20) {
@@ -143,6 +144,9 @@ struct ParentHome: View {
                     }
                 }
                 Button("刷新声音") { audio.refreshCapabilities() }.font(.system(size: 20, weight: .semibold))
+                Button("图片来源") { showCredits = true }
+                    .font(.system(size: 20, weight: .semibold))
+                    .accessibilityIdentifier("imageCredits")
             }
             .padding(20)
         }
@@ -180,11 +184,81 @@ struct ParentHome: View {
         .sheet(isPresented: Binding(get: { model.keyUnlocked }, set: { model.keyUnlocked = $0 })) {
             KeyEntrySheet()
         }
+        .sheet(isPresented: $showCredits) {
+            NavigationStack {
+                ImageCreditsPage(catalog: model.vocabulary)
+            }
+        }
     }
 
     private var exportLabel: String {
         guard let date = store.snapshot.lastExportAt else { return "上次导出：还没有导出过" }
         return "上次导出：\(date.formatted(date: .abbreviated, time: .shortened))"
+    }
+}
+
+struct ImageCreditsPage: View {
+    var catalog: VocabularyCatalog
+    @Environment(\.dismiss) private var dismiss
+
+    private var photos: [VocabularyWord] {
+        catalog.categories.flatMap(\.words).filter { $0.credit != nil }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("图片来源")
+                    .font(.system(size: 34, weight: .bold))
+                Text("插画")
+                    .font(.system(size: 28, weight: .bold))
+                Text(VocabularyImages.openMojiAttribution)
+                    .font(.system(size: 20))
+                Link("openmoji.org", destination: VocabularyImages.openMojiProjectURL)
+                    .font(.system(size: 20, weight: .semibold))
+                Link("CC BY-SA 4.0", destination: VocabularyImages.openMojiLicenseURL)
+                    .font(.system(size: 20, weight: .semibold))
+                Text("杭州照片")
+                    .font(.system(size: 28, weight: .bold))
+                Text("这些照片来自维基共享资源。置顶卡片上的小图就是西湖那一张。")
+                    .font(.system(size: 20))
+                ForEach(photos) { word in
+                    if let credit = word.credit {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(word.chinese) · \(word.english)")
+                                .font(.system(size: 20, weight: .semibold))
+                            Text("作者：\(credit.author)")
+                                .font(.system(size: 20))
+                            if let url = URL(string: credit.licenseURL) {
+                                Link(credit.license, destination: url)
+                                    .font(.system(size: 20, weight: .semibold))
+                            } else {
+                                Text(credit.license).font(.system(size: 20))
+                            }
+                            Text(credit.sourceURL)
+                                .font(.system(size: 20))
+                            if let url = URL(string: credit.sourceURL) {
+                                Link("打开文件页", destination: url)
+                                    .font(.system(size: 20, weight: .semibold))
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 8)
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(Color.white)
+        .foregroundStyle(Color.black)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("返回") { dismiss() }
+                    .font(.system(size: 20, weight: .semibold))
+            }
+        }
     }
 }
 
