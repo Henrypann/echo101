@@ -39,19 +39,26 @@ struct EchoProductTests {
 
     @Test func vocabularyImagesResolveAndHangzhouPhotosAreAttributed() throws {
         let catalog = try VocabularyCatalog.load()
+        let textOnly: Set<String> = [
+            "plum", "yogurt", "tofu", "tummy", "shoulder", "sweater", "pajamas", "pillow",
+            "diaper", "table", "towel", "doll", "swing", "stroller", "close", "guest", "gold"
+        ]
         var pictured = 0
         var hangzhouPhotos = 0
+        var plain = 0
         for category in catalog.categories {
             if !category.image.isEmpty {
                 #expect(VocabularyImages.resourceURL(named: category.image) != nil)
             }
-            let common = category.id != "hangzhou"
             for word in category.words {
-                if common {
-                    #expect(!word.image.isEmpty)
-                    #expect(word.credit == nil)
+                if category.id != "hangzhou" { #expect(word.credit == nil) }
+                if textOnly.contains(word.id) {
+                    #expect(word.image.isEmpty)
+                    #expect(word.emoji.isEmpty)
+                    plain += 1
+                    continue
                 }
-                guard !word.image.isEmpty else { continue }
+                #expect(!word.image.isEmpty)
                 pictured += 1
                 #expect(VocabularyImages.resourceURL(named: word.image) != nil)
                 guard category.id == "hangzhou" else { continue }
@@ -63,7 +70,8 @@ struct EchoProductTests {
                 #expect(credit.sourceURL.hasPrefix("https://commons.wikimedia.org/"))
             }
         }
-        #expect(pictured == 237)
+        #expect(plain == textOnly.count)
+        #expect(pictured == 220)
         #expect(hangzhouPhotos == 26)
         #expect(VocabularyImages.openMojiAttribution.contains("CC BY-SA 4.0"))
     }

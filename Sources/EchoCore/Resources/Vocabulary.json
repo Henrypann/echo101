@@ -569,11 +569,11 @@
           "id": "yogurt",
           "english": "Yogurt",
           "chinese": "酸奶",
-          "emoji": "🍦",
+          "emoji": "",
           "exampleEn": "I eat sweet yogurt.",
           "exampleZh": "我吃甜酸奶。",
           "ipa": "",
-          "image": "om-1F366"
+          "image": ""
         },
         {
           "id": "vegetable",
@@ -589,11 +589,11 @@
           "id": "tofu",
           "english": "Tofu",
           "chinese": "豆腐",
-          "emoji": "🍲",
+          "emoji": "",
           "exampleEn": "Tofu is soft and white.",
           "exampleZh": "豆腐又软又白。",
           "ipa": "",
-          "image": "om-1F372"
+          "image": ""
         },
         {
           "id": "bun",
@@ -780,11 +780,11 @@
           "id": "plum",
           "english": "Plum",
           "chinese": "李子",
-          "emoji": "🍑",
+          "emoji": "",
           "exampleEn": "I eat a purple plum.",
           "exampleZh": "我吃一颗紫李子。",
           "ipa": "",
-          "image": "om-1F351"
+          "image": ""
         }
       ],
       "image": "om-1F34E"
@@ -1102,11 +1102,11 @@
           "id": "gold",
           "english": "Gold",
           "chinese": "金色",
-          "emoji": "🌟",
+          "emoji": "",
           "exampleEn": "The star looks gold.",
           "exampleZh": "星星看起来金黄金黄。",
           "ipa": "",
-          "image": "om-1F31F"
+          "image": ""
         },
         {
           "id": "colorful",
@@ -1404,11 +1404,11 @@
           "id": "tummy",
           "english": "Tummy",
           "chinese": "肚子",
-          "emoji": "⭕",
+          "emoji": "",
           "exampleEn": "My tummy is full.",
           "exampleZh": "我的肚子饱了。",
           "ipa": "",
-          "image": "om-2B55"
+          "image": ""
         },
         {
           "id": "back",
@@ -1424,11 +1424,11 @@
           "id": "shoulder",
           "english": "Shoulder",
           "chinese": "肩膀",
-          "emoji": "🤷",
+          "emoji": "",
           "exampleEn": "The bag sits on my shoulder.",
           "exampleZh": "包在我肩膀上。",
           "ipa": "",
-          "image": "om-1F937"
+          "image": ""
         }
       ],
       "image": "om-1F44B"
@@ -1535,31 +1535,31 @@
           "id": "sweater",
           "english": "Sweater",
           "chinese": "毛衣",
-          "emoji": "🧶",
+          "emoji": "",
           "exampleEn": "The sweater feels warm.",
           "exampleZh": "毛衣暖暖的。",
           "ipa": "",
-          "image": "om-1F9F6"
+          "image": ""
         },
         {
           "id": "pajamas",
           "english": "Pajamas",
           "chinese": "睡衣",
-          "emoji": "🛌",
+          "emoji": "",
           "exampleEn": "I wear soft pajamas.",
           "exampleZh": "我穿软软的睡衣。",
           "ipa": "",
-          "image": "om-1F6CC"
+          "image": ""
         },
         {
           "id": "diaper",
           "english": "Diaper",
           "chinese": "尿布",
-          "emoji": "👶",
+          "emoji": "",
           "exampleEn": "We change the diaper.",
           "exampleZh": "我们换尿布。",
           "ipa": "",
-          "image": "om-1F476"
+          "image": ""
         },
         {
           "id": "scarf",
@@ -1636,11 +1636,11 @@
           "id": "table",
           "english": "Table",
           "chinese": "桌子",
-          "emoji": "🪵",
+          "emoji": "",
           "exampleEn": "The cup is on the table.",
           "exampleZh": "杯子在桌子上。",
           "ipa": "",
-          "image": "om-1FAB5"
+          "image": ""
         },
         {
           "id": "door",
@@ -1716,21 +1716,21 @@
           "id": "towel",
           "english": "Towel",
           "chinese": "毛巾",
-          "emoji": "🧻",
+          "emoji": "",
           "exampleEn": "I dry with a towel.",
           "exampleZh": "我用毛巾擦干。",
           "ipa": "",
-          "image": "om-1F9FB"
+          "image": ""
         },
         {
           "id": "pillow",
           "english": "Pillow",
           "chinese": "枕头",
-          "emoji": "🛌",
+          "emoji": "",
           "exampleEn": "My head rests on the pillow.",
           "exampleZh": "我的头靠着枕头。",
           "ipa": "",
-          "image": "om-1F6CC"
+          "image": ""
         },
         {
           "id": "blanket",
@@ -1827,11 +1827,11 @@
           "id": "doll",
           "english": "Doll",
           "chinese": "娃娃",
-          "emoji": "🧸",
+          "emoji": "",
           "exampleEn": "I hug my doll.",
           "exampleZh": "我抱抱娃娃。",
           "ipa": "",
-          "image": "om-1F9F8"
+          "image": ""
         },
         {
           "id": "blocks",
@@ -1957,11 +1957,11 @@
           "id": "swing",
           "english": "Swing",
           "chinese": "秋千",
-          "emoji": "🎢",
+          "emoji": "",
           "exampleEn": "I sit on the swing.",
           "exampleZh": "我坐在秋千上。",
           "ipa": "",
-          "image": "om-1F3A2"
+          "image": ""
         }
       ],
       "image": "om-1F9F8"
@@ -2068,11 +2068,11 @@
           "id": "stroller",
           "english": "Stroller",
           "chinese": "推车",
-          "emoji": "🛒",
+          "emoji": "",
           "exampleEn": "Baby sits in the stroller.",
           "exampleZh": "宝宝坐在推车里。",
           "ipa": "",
-          "image": "om-1F6D2"
+          "image": ""
         },
         {
           "id": "scooter",
@@ -2450,11 +2450,11 @@
           "id": "guest",
           "english": "Guest",
           "chinese": "客人",
-          "emoji": "🛎️",
+          "emoji": "",
           "exampleEn": "A guest comes today.",
           "exampleZh": "今天有客人来。",
           "ipa": "",
-          "image": "om-1F6CE"
+          "image": ""
         },
         {
           "id": "we",
@@ -2571,11 +2571,11 @@
           "id": "close",
           "english": "Close",
           "chinese": "关上",
-          "emoji": "📁",
+          "emoji": "",
           "exampleEn": "Please close the door.",
           "exampleZh": "请把门关上。",
           "ipa": "",
-          "image": "om-1F4C1"
+          "image": ""
         },
         {
           "id": "look",

@@ -134,7 +134,9 @@ struct WordListPage: View {
                             Task { @MainActor in model.playWord(spoken) }
                         } label: {
                             HStack(spacing: 12) {
-                                VocabularyPicture(name: word.image, emoji: word.emoji, side: 64, fills: word.credit != nil, corner: 12)
+                                if !word.image.isEmpty || !word.emoji.isEmpty {
+                                    VocabularyPicture(name: word.image, emoji: word.emoji, side: 64, fills: word.credit != nil, corner: 12)
+                                }
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(word.english)
                                         .font(.system(size: 28, weight: .semibold))
